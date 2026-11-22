@@ -19,6 +19,7 @@
 . "$(dirname "$0")/lib.sh"                              # loads the swarm's config into SW_* variables
 cd "$SW_REPO" || { echo "repo $SW_REPO not found" >&2; exit 1; }
 OUT_DIR=$SW_RUN
+export SWARM_ONLY="${SWARM_ONLY:-${SW_ONLY:-}}"
 cmd=$1; shift
 # One lock per tracker database, so two swarms on the same repository queue up instead of colliding.
 if [ -d "$SW_REPO/.beads" ]; then LOCK="$SW_REPO/.beads/.swarm.lock"; else LOCK="$OUT_DIR/.bd.lock"; fi
@@ -110,9 +111,10 @@ PYTAG
   next) who=$1; deliver "$who"; echo "$HINT"; [ -z "$who" ] && { echo "usage: q.sh next <worker-name>"; exit 2; }
     snapshot
     pick=$(python3 - "$SNAP" <<'EOF'
-import json,re,sys
+import json,os,re,sys
 try: d=json.load(open(sys.argv[1]))
 except Exception: d={"in_progress":[],"open":[]}
+only=os.environ.get("SWARM_ONLY") or ""          # a swarm that shares a tracker takes only slices whose title matches this
 def files(i):
     m=re.search(r"files:\s*(.*)", i.get("description") or "", re.I)
     return {f.strip().split("/")[-1] for f in (m.group(1) if m else "").split(",") if f.strip() and f.strip().lower()!="none"}
@@ -120,6 +122,7 @@ held=set()
 for i in d["in_progress"]: held |= files(i)
 for i in sorted(d["open"],key=lambda i:(i.get("priority") if i.get("priority") is not None else 9,i.get("created_at") or "",i["id"])):
     if i["title"].startswith(("Board is live","TEST","ZZ")): continue
+    if only and not re.search(only, i["title"] or "", re.I): continue
     if files(i) & held: continue
     print(i["id"]); break
 EOF

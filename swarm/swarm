@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """swarm: a reusable multi-agent swarm kit (queue, messages, wake, board, backup). See README.md.
-  swarm init <name> --repo <path> [--branch B] [--run DIR] [--board HTML] [--subagents DIR]
+  swarm init <name> --repo <path> [--branch B] [--run DIR] [--board HTML] [--subagents DIR] [--only REGEX]
   swarm q <name> <q.sh command...>        swarm board <name> [--loop N | --live [--port P]]       swarm wake <name> <who> [beat] [idle]
   swarm backup <name> <dest> [END]        swarm status <name>                 swarm stop <name>"""
 import json, os, re, shutil, signal, subprocess, sys, time, glob
@@ -28,10 +28,10 @@ def alive(pid):
 def pidfile(c, kind): return os.path.join(c["run"], kind + ".pid")
 
 def init(a):
-    if not a or a[0].startswith("-"): die("usage: swarm init <name> --repo <path> [--branch B] [--run DIR] [--board HTML] [--subagents DIR]")
+    if not a or a[0].startswith("-"): die("usage: swarm init <name> --repo <path> [--branch B] [--run DIR] [--board HTML] [--subagents DIR] [--only REGEX]")
     name = a.pop(0)
     if not re.fullmatch(r"[A-Za-z0-9._-]+", name): die("name: letters, digits, . _ - only")
-    repo = opt(a, "--repo"); branch = opt(a, "--branch"); run = opt(a, "--run"); board = opt(a, "--board"); sub = opt(a, "--subagents")
+    repo = opt(a, "--repo"); branch = opt(a, "--branch"); run = opt(a, "--run"); board = opt(a, "--board"); sub = opt(a, "--subagents"); only = opt(a, "--only")
     if a: die("unknown arguments: " + " ".join(a))
     if not repo: die("--repo <path> is required")
     repo = os.path.abspath(os.path.expanduser(repo))
@@ -45,7 +45,7 @@ def init(a):
     subfound = bool(sub); sub = sub or find_subagents()
     os.makedirs(os.path.join(run, "roles"), exist_ok=True); os.makedirs(os.path.dirname(board), exist_ok=True)
     c = {"name": name, "repo": repo, "branch": branch, "run": run, "board": board, "subagents": sub,
-         "started": time.strftime("%Y-%m-%d %H:%M"), "started_epoch": int(time.time()), "tools": TOOLS}
+         "only": only or "", "started": time.strftime("%Y-%m-%d %H:%M"), "started_epoch": int(time.time()), "tools": TOOLS}
     json.dump(c, open(os.path.join(run, "swarm.json"), "w"), indent=2)
     home = os.path.join(ROOT, name)
     if os.path.abspath(home) != run:                      # a run folder elsewhere is still found by name

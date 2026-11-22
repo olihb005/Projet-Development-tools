@@ -94,8 +94,8 @@ Each swarm has its own name, run folder, role files and board port, so you can r
 
 - **Different repositories:** nothing to do. `swarm init` each one and give each board its own `--port`.
 - **The same repository:** give each swarm its own git worktree and branch, and pass that worktree as `--repo`. The queue lock
-  is per tracker database, so swarms sharing a tracker wait for each other rather than collide; give each its own `bd` prefix
-  or label if you want the queues kept apart.
+  is per tracker database, so swarms sharing a tracker wait for each other rather than collide. Pass `--only '<regex>'` to
+  `swarm init` and that swarm's workers take only slices whose title matches, for example `--only '^(UI|editor)'`.
 - **Different Claude accounts:** a swarm belongs to the session that launched it. Start each in its own terminal, and pass
   `--subagents ~/.claude/projects/<project>/<session id>/subagents` to `swarm init` so the board watches the right agents.
   Usage limits are per account; agree a stop line for each and have the chief close out before it.
