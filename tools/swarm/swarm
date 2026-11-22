@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+"""swarm: a reusable multi-agent swarm kit (queue, messages, wake, board, backup). See README.md.
+  swarm init <name> --repo <path> [--branch B] [--run DIR] [--board HTML] [--subagents DIR]
+  swarm q <name> <q.sh command...>        swarm board <name> [--loop N]       swarm wake <name> <who> [beat] [idle]
+  swarm backup <name> <dest> [END]        swarm status <name>                 swarm stop <name>"""
+import json, os, re, shutil, signal, subprocess, sys, time, glob
+TOOLS = os.path.dirname(os.path.abspath(__file__)); HOME = os.path.expanduser("~")
+ROOT = os.path.join(HOME, ".claude", "swarm")
+def die(m, c=1): sys.stderr.write("swarm: " + m + "\n"); sys.exit(c)
+def cfg_path(name):
+    p = os.path.join(ROOT, name, "swarm.json")
+    if not os.path.isfile(p): die(f"no swarm named '{name}' (looked for {p}); run: swarm init {name} --repo <path>")
+    return p
+def load(name): return json.load(open(cfg_path(name)))
+def env_for(name): e = dict(os.environ); e["SWARM_CONFIG"] = cfg_path(name); return e
+def find_subagents():
+    c = glob.glob(os.path.join(HOME, ".claude", "projects", "*", "*", "subagents"))
+    return max(c, key=os.path.getmtime) if c else ""
+def opt(a, flag, default=None):
+    if flag in a:
+        i = a.index(flag)
+        if i + 1 >= len(a): die(f"{flag} needs a value")
+        v = a[i + 1]; del a[i:i + 2]; return v
+    return default
+def alive(pid):
+    try: os.kill(pid, 0); return True
+    except OSError: return False
+def pidfile(c, kind): return os.path.join(c["run"], kind + ".pid")
+
+def init(a):
+    if not a or a[0].startswith("-"): die("usage: swarm init <name> --repo <path> [--branch B] [--run DIR] [--board HTML] [--subagents DIR]")
+    name = a.pop(0)
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", name): die("name: letters, digits, . _ - only")
+    repo = opt(a, "--repo"); branch = opt(a, "--branch"); run = opt(a, "--run"); board = opt(a, "--board"); sub = opt(a, "--subagents")
+    if a: die("unknown arguments: " + " ".join(a))
+    if not repo: die("--repo <path> is required")
+    repo = os.path.abspath(os.path.expanduser(repo))
+    if not os.path.isdir(repo): die(f"repo {repo} does not exist")
+    run = os.path.abspath(os.path.expanduser(run)) if run else os.path.join(ROOT, name)
+    if os.path.isfile(os.path.join(run, "swarm.json")): die(f"{run}/swarm.json already exists; pick another name or --run (nothing changed)")
+    if not branch:
+        branch = subprocess.run(["git", "-C", repo, "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True).stdout.strip()
+    board = os.path.abspath(os.path.expanduser(board)) if board else os.path.join(run, "board.html")
+    if sub: sub = os.path.abspath(os.path.expanduser(sub))
+    subfound = bool(sub); sub = sub or find_subagents()
+    os.makedirs(os.path.join(run, "roles"), exist_ok=True); os.makedirs(os.path.dirname(board), exist_ok=True)
+    c = {"name": name, "repo": repo, "branch": branch, "run": run, "board": board, "subagents": sub,
+         "started": time.strftime("%Y-%m-%d %H:%M"), "started_epoch": int(time.time()), "tools": TOOLS}
+    json.dump(c, open(os.path.join(run, "swarm.json"), "w"), indent=2)
+    for f in ("ledger.md", "messages.log", "roster.txt", "verify.log"): open(os.path.join(run, f), "a").close()
+    sw = os.path.join(TOOLS, "swarm")
+    subs = {"{{NAME}}": name, "{{REPO}}": repo, "{{BRANCH}}": branch or "(none)", "{{RUN}}": run, "{{TOOLS}}": TOOLS, "{{BOARD}}": board,
+            "{{Q}}": f"{sw} q {name}", "{{WAKE}}": f"{sw} wake {name}", "{{STARTED}}": c["started"], "{{ROLES}}": os.path.join(run, "roles")}
+    for f in sorted(glob.glob(os.path.join(TOOLS, "templates", "roles", "*.md"))):
+        t = open(f).read()
+        for k, v in subs.items(): t = t.replace(k, v)
+        open(os.path.join(run, "roles", os.path.basename(f)), "w").write(t)
+    print(f"swarm '{name}' created in {run}\n  repo {repo}  branch {branch or '(none)'}\n  board {board}")
+    print("  subagents dir: " + (sub + ("" if subfound else "  (guessed: most recently active session; check it, or re-run with --subagents)") if sub else "NOT FOUND: agents will show as idle; pass --subagents <dir> (…/projects/<proj>/<session id>/subagents)"))
+    if not shutil.which("bd"): print("  WARNING: bd (beads tracker) is not installed or not on PATH. The queue needs it. Install it, then run `bd init` in the repo.")
+    elif not os.path.isdir(os.path.join(repo, ".beads")):
+        print(f"  NOTE: {repo} has no bd database (.beads). Create one yourself, it is not done silently:\n        cd {repo} && bd init --prefix <short prefix>\n        (add .beads to .gitignore if you do not want the tracker committed)")
+    print(f"next: fill the three marked sections in {run}/roles/COMMON.md (What we are building, Rules of this project, Places), then stock the queue: swarm q {name} add \"<title>\" \"<what, done-when>\\nfiles: a.py\" 1")
+
+def status(name):
+    sys.stdout.reconfigure(line_buffering=True)
+    c = load(name); run = c["run"]; env = env_for(name)
+    print(f"swarm {name}: repo {c['repo']} branch {c['branch']} started {c['started']}\n\nROSTER (name|agent id|role|launched by|time)")
+    r = open(run + "/roster.txt").read().strip(); print(r or "  (empty: record agents with `swarm q %s join <name> <id> <role> <by>`)")
+    print("\nQUEUE", flush=True); subprocess.run([os.path.join(TOOLS, "q.sh"), "list"], env=env)
+    print("\nWHO", flush=True); subprocess.run([os.path.join(TOOLS, "q.sh"), "who"], env=env)
+    print("\nLAST MESSAGES")
+    ls = open(run + "/messages.log").read().splitlines()[-8:]
+    for l in ls:
+        f = l.split("|", 4)
+        if len(f) == 5: print(f"  {f[1]}  {f[2]} -> {f[3]}: {f[4]}")
+    if not ls: print("  (none)")
+    cv = run + "/commits_verified.log"
+    if os.path.isfile(cv): print("\nVERIFIED COMMITS\n" + open(cv).read().rstrip())
+    for k in ("board", "backup"):
+        p = pidfile(c, k)
+        if os.path.isfile(p):
+            try: pid = int(open(p).read()); print(f"\n{k} loop: pid {pid} {'running' if alive(pid) else 'not running (stale pid file)'}")
+            except ValueError: pass
+
+def stop(name):
+    c = load(name)
+    for k in ("board", "backup"):
+        p = pidfile(c, k)
+        if not os.path.isfile(p): print(f"{k}: no pid file, nothing to stop"); continue
+        try: pid = int(open(p).read())
+        except ValueError: os.remove(p); continue
+        try: cl = open(f"/proc/{pid}/cmdline").read().replace("\0", " ")
+        except OSError: cl = ""
+        if alive(pid) and any(x in cl for x in ("board.py", "backup.sh")):  # only a process that is still the one we started
+            os.kill(pid, signal.SIGTERM)
+            for _ in range(20):
+                if not alive(pid): break
+                time.sleep(0.1)
+            print(f"{k}: stopped pid {pid}")
+        else: print(f"{k}: pid {pid} not running")
+        os.remove(p)
+
+def main():
+    a = sys.argv[1:]
+    if not a or a[0] in ("-h", "--help", "help"): print(__doc__); return
+    cmd = a.pop(0)
+    if cmd == "init": return init(a)
+    if not a: die(f"usage: swarm {cmd} <name> ...")
+    name = a.pop(0)
+    if cmd == "q": os.execve(os.path.join(TOOLS, "q.sh"), [os.path.join(TOOLS, "q.sh")] + a, env_for(name))
+    if cmd == "status": return status(name)
+    if cmd == "stop": return stop(name)
+    c = load(name)
+    if cmd == "board":
+        py = os.path.join(TOOLS, "board.py"); loop = "--loop" in a
+        if loop:
+            p = pidfile(c, "board")
+            if os.path.isfile(p):
+                try:
+                    if alive(int(open(p).read())): die(f"a board loop is already running for {name} (pid {open(p).read().strip()}); `swarm stop {name}` first")
+                except ValueError: pass
+            open(p, "w").write(str(os.getpid()))
+        os.execve(sys.executable, [sys.executable, py] + a, env_for(name))
+    if cmd == "wake":
+        if not a: die("usage: swarm wake <name> <who> [beat] [idle]")
+        os.execve(os.path.join(TOOLS, "wake.sh"), [os.path.join(TOOLS, "wake.sh")] + a, env_for(name))
+    if cmd == "backup":
+        if not a: die("usage: swarm backup <name> <dest> [END=YYYYmmddHHMM]")
+        p = pidfile(c, "backup")
+        if os.path.isfile(p):
+            try:
+                if alive(int(open(p).read())): die(f"a backup loop is already running for {name} (pid {open(p).read().strip()}); `swarm stop {name}` first")
+            except ValueError: pass
+        open(p, "w").write(str(os.getpid()))
+        os.execve(os.path.join(TOOLS, "backup.sh"), [os.path.join(TOOLS, "backup.sh")] + a, env_for(name))
+    die(f"unknown command '{cmd}'\n" + __doc__)
+main()
