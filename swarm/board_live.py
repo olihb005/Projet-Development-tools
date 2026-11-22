@@ -6,7 +6,7 @@ import csv, glob, io, json, os, re, subprocess, sys, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 RUN = os.environ["SWARM_RUN"]   # the run folder: queue.json, messages.log, roster.txt, verify.log
 WT = os.environ.get("SWARM_REPO", os.getcwd())   # the git checkout the agents work in
-Q = os.environ.get("SWARM_Q", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools", "swarm", "q.sh"))
+Q = os.environ.get("SWARM_Q", os.path.join(os.path.dirname(os.path.abspath(__file__)), "q.sh"))
 SUB = os.environ.get("SWARM_SUBAGENTS", "")   # ~/.claude/projects/<project>/<session id>/subagents
 SINCE = os.environ.get("SWARM_SINCE", time.strftime("%Y-%m-%d 00:00")); TITLE = os.environ.get("SWARM_TITLE", "Swarm")
 ALLOW = (RUN,)
@@ -106,7 +106,7 @@ def slow_loop():
                     except Exception: pass
             except Exception: pass
             commits = [dict(zip(("hm", "h", "s"), l.split("\t"))) for l in sh(f"git -C {WT} log -40 --format='%cd%x09%h%x09%s' --date=format:%H:%M --since='{SINCE}'").splitlines() if l.count("\t") == 2]
-            unp = set(sh(f"git -C {WT} log @{upstream}..HEAD --format=%h").split())
+            unp = set(sh(f"git -C {WT} log @{{upstream}}..HEAD --format=%h").split())
             for c in commits: c["wait"] = c["h"] in unp
             for v in verd: v["tag"] = tagline(titles.get(v["id"], ""))
             rs = u.get("five_hour_resets_at")

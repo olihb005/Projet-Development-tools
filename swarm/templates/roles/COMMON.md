@@ -55,3 +55,14 @@ you with your history intact.
 - **Nothing falls through.** A fault you see goes to its owner by message and into the queue with the path that shows it. A slice
   you cannot finish goes back with what is left. Leftovers are queued, never only written down.
 - **Time labels come from the `date` command**, never from memory.
+
+## Keeping the board and the machine honest
+
+- **Say what you are on.** `{{Q}} doing <your name> "<three to five plain words>"` whenever your task changes. It is the label
+  under your node on the board, so write it for someone who has not read the queue.
+- **Post results as headlines.** `{{Q}} post <your name> "<one plain sentence with its number>" "<what it means, what is still
+  wrong>" [file]`. No slice ids, file names or working jargon. Bad news is posted the same way.
+- **Heavy runs take turns.** At most two heavy runs (a long test run, a build, a big import) across the whole swarm at once.
+  Before one: `{{Q}} status <your name> "heavy: <what>"`; wait if two are announced and not finished; afterwards
+  `{{Q}} status <your name> "done: <what>"`. Always under `nice` and `timeout`.
+- **Commit messages are for strangers.** A subject of 72 characters or fewer that says what changed, a blank line, then why.

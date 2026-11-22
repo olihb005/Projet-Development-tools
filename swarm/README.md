@@ -1,7 +1,7 @@
 # swarm: a reusable agent-team kit for Claude Code
 
 A chief, a manager, workers and verifiers, launched as long-lived Agent-tool agents under one main session, sharing a slice queue
-(on the `bd` tracker), a message log, and a self-refreshing HTML board. Generalised from a real project swarm; nothing in it is
+(on the `bd` tracker), a message log, and a board. Generalised from a real project swarm; nothing in it is
 project-specific. Everything the scripts need is in one `swarm.json` per swarm, so several swarms can coexist.
 
 ## Quick start

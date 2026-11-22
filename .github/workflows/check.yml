@@ -1,0 +1,9 @@
+name: check
+on: [push, pull_request]
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash -n swarm/q.sh swarm/wake.sh swarm/backup.sh swarm/lib.sh install.sh tests/smoke.sh
+      - run: python3 -m py_compile swarm/swarm swarm/board.py swarm/board_live.py
