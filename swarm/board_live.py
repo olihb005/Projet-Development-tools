@@ -48,6 +48,24 @@ def tagline(title):
     """A three to five word, plain label for a slice: drop the code at the front, keep the words before the first colon or bracket."""
     t = re.sub(r"^\s*[A-Z]{1,3}\d*[a-z]?(-\d+)?\s+", "", title or ""); t = re.split(r"[:(;]| - ", t)[0].strip()
     w = t.split(); return " ".join(w[:5]) + ("…" if len(w) > 5 else "")
+def _fmap():
+    try: return json.load(open(RUN + "/features.json"))
+    except Exception: return {}
+def feat(title):
+    """The feature a slice belongs to: a code with a number at the front of its title ("M2 ...", "U8 ..."), or a keyword from
+    features.json. Codes that share a label there are one feature."""
+    names = _fmap(); code = ""
+    m = re.match(r"\s*([A-Z]{1,3})\d+[a-z]?(-\d+)?\s", title or "")
+    if m: code = m.group(1)
+    else:
+        low = (title or "").lower()
+        code = next((c for word, c in (names.get("_keywords") or {}).items() if word in low), "")
+    label = names.get(code)
+    return next((k for k, v in names.items() if v == label), code) if label else code
+def origin(desc):
+    m = re.search(r"^from:\s*(\S+)", desc or "", re.M); return m.group(1) if m else ""
+def features(titles):
+    names = _fmap(); return {f: names.get(f, f) for f in sorted({feat(t) for t in titles} - {""})}
 def tags():
     try: return json.load(open(RUN + "/taglines.json"))
     except Exception: return {}
@@ -74,7 +92,7 @@ def slow_loop():
             try: snap = json.load(open(RUN + "/queue.json"))
             except Exception: snap = {"in_progress": [], "open": [], "closed": []}
             key = lambda i: (i.get("priority") if i.get("priority") is not None else 9, i.get("created_at") or "", i["id"])
-            mk = lambda i: {"id": i["id"], "p": i.get("priority"), "who": i.get("assignee") or "", "title": (i.get("title") or "")[:110], "tag": tagline(i.get("title"))}
+            mk = lambda i: {"id": i["id"], "p": i.get("priority"), "who": i.get("assignee") or "", "title": (i.get("title") or "")[:110], "tag": tagline(i.get("title")), "feat": feat(i.get("title")), "origin": origin(i.get("description"))}
             prog = [mk(i) for i in sorted(snap["in_progress"], key=key)]
             ready = [mk(i) for i in sorted(snap["open"], key=key) if "Board is live" not in (i.get("title") or "")]
             cl = sorted([i for i in snap["closed"] if (i.get("closed_at") or "") >= SINCE.replace(" ", "T") and not (i.get("title") or "").startswith(("ZZ", "TEST"))], key=lambda i: i.get("closed_at") or "", reverse=True)
@@ -108,14 +126,14 @@ def slow_loop():
             commits = [dict(zip(("hm", "h", "s"), l.split("\t"))) for l in sh(f"git -C {WT} log -40 --format='%cd%x09%h%x09%s' --date=format:%H:%M --since='{SINCE}'").splitlines() if l.count("\t") == 2]
             unp = set(sh(f"git -C {WT} log @{{upstream}}..HEAD --format=%h").split())
             for c in commits: c["wait"] = c["h"] in unp
-            for v in verd: v["tag"] = tagline(titles.get(v["id"], ""))
+            for v in verd: v["title"] = titles.get(v["id"], ""); v["tag"] = tagline(v["title"]); v["feat"] = feat(v["title"])
             rs = u.get("five_hour_resets_at")
             S["slow"] = {"title": TITLE, "since": SINCE[11:16], "usage": {"five": u.get("five_hour") or 0, "seven": u.get("seven_day") or 0, "reset": time.strftime("%H:%M", time.localtime(rs)) if isinstance(rs, (int, float)) else "?"},
-                         "agents": ag, "prog": prog, "ready": ready[:12], "nready": len(ready), "built": [{"id": i["id"], "hm": (i.get("closed_at") or "")[11:16], "title": (i.get("title") or "")[:100], "who": i.get("assignee") or ""} for i in cl[:14]], "nbuilt": len(cl),
+                         "agents": ag, "prog": prog, "ready": ready[:80], "nready": len(ready), "built": [{"id": i["id"], "hm": (i.get("closed_at") or "")[11:16], "title": (i.get("title") or "")[:100], "who": i.get("assignee") or ""} for i in cl[:14]], "nbuilt": len(cl),
                          "verd": verd[-60:][::-1], "nverd": len(verd), "holds": sum(1 for v in verd if v["v"] == "holds"), "awaiting": len([i for i in cl if i["id"] not in seen]),
                          "commits": commits, "ncom": len(sh(f"git -C {WT} log --since='{SINCE}' --format=%h").split()), "nunp": len(unp),
                          "ledger": (open(RUN + "/ledger.md").read().splitlines()[-8:] if os.path.isfile(RUN + "/ledger.md") else []),
-                         "score": scoreboard(), "hist": HIST[-360:], "checks": [{"v": v, "id": i, "w": owner.get(i, "")} for v, i in checking.items()], "passes": [{"v": a, "w": b} for a, b in passes], "deliv": deliv[-12:][::-1]}
+                         "features": features(titles.values()), "score": scoreboard(), "hist": HIST[-360:], "checks": [{"v": v, "id": i, "w": owner.get(i, "")} for v, i in checking.items()], "passes": [{"v": a, "w": b} for a, b in passes], "deliv": deliv[-12:][::-1]}
             S["ver"] += 1
         except Exception as e: sys.stderr.write(f"slow: {e!r}\n")
         time.sleep(3)
@@ -231,7 +249,7 @@ class H(BaseHTTPRequestHandler):
             self.send_response(200); self.send_header("Content-Type", "text/event-stream"); self.send_header("Cache-Control", "no-cache"); self.end_headers()
             def send(ev, data): self.wfile.write(f"event: {ev}\ndata: {json.dumps(data)}\n\n".encode()); self.wfile.flush()
             try:
-                msgs = messages(); n = (msgs[-1]["i"] + 1) if msgs else 0; pu = pulse(); ver = S["ver"]; send("init", {"slow": S["slow"], "pulse": pu, "msgs": msgs[-400:]}); k = 0
+                msgs = messages(); n = (msgs[-1]["i"] + 1) if msgs else 0; pu = pulse(); ver = S["ver"]; send("init", {"slow": S["slow"], "pulse": pu, "msgs": msgs[-1500:]}); k = 0
                 while True:
                     time.sleep(0.4); k += 1
                     for m in messages(n): send("msg", m); n = m["i"] + 1

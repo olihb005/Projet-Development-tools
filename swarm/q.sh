@@ -1,7 +1,7 @@
 #!/bin/bash
 # The swarm's slice queue and message log, on the bd tracker in the project repository. No model in it.
 # Workers PULL their next slice here the moment they finish one, so nobody waits for the manager to hand work out.
-#   q.sh add "<title>" "<description>" [priority 0-4, 0 first]   (chief or PM) description must hold a line "files: a.py, b.py"
+#   q.sh add "<title>" "<description>" [priority 0-4, 0 first] [from]   description must hold a line "files: a.py, b.py"; from = who asked (main, chief, v-1 …)
 #   q.sh next <worker-name>     claim the first ready slice whose files no in-progress slice holds; prints it, or NONE
 #   q.sh done <worker-name> <id> "<commit and one-line result>"
 #   q.sh back <worker-name> <id> "<why>"      give a slice back unfinished (it returns to the queue with your note)
@@ -75,8 +75,10 @@ HINT="(mesh: anyone can message anyone. q.sh who lists everyone and what each is
 case "$cmd" in
   add)  # two agents writing at once can make bd answer nothing: try up to three times before giving up
         for try in 1 2 3; do
-          out=$(bd create "$1" -d "$2" -p "${3:-2}" --json 2>/dev/null)
-          if printf '%s' "$out" | python3 -c "import json,sys;d=json.load(sys.stdin);print('queued',d['id'],d['title'])" 2>/dev/null; then snapshot; say queue all "new slice: $1"; exit 0; fi
+          d="$2"; [ -n "${4:-}" ] && d="$2
+from: $4"                                                # who asked for it: main, chief, a verifier, a worker
+          out=$(bd create "$1" -d "$d" -p "${3:-2}" --json 2>/dev/null)
+          if printf '%s' "$out" | python3 -c "import json,sys;d=json.load(sys.stdin);print('queued',d['id'],d['title'])" 2>/dev/null; then snapshot; say "${4:-queue}" all "new slice: $1"; exit 0; fi
           sleep $((try * 2))
         done
         echo "NOT QUEUED after three tries: tell the PM the slice text so it is not lost"; exit 1 ;;
