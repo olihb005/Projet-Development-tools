@@ -39,6 +39,7 @@ def resolve_as_of(spec, cfg):
 
 def collect(cfgs, as_of_spec, git=True, mode="swarm", refresh=0, live=False, title=""):
     swarms, notes = [], set(); pack = ss.load_pack(arg("--characters"))
+    ss.reset_fleet()
     for c in cfgs:
         t, note = resolve_as_of(as_of_spec, c)
         if note: notes.add("replayed as of each swarm's last write" if as_of_spec == "auto" and len(cfgs) > 1 else note)

@@ -49,7 +49,46 @@ def load_pack(spec=None):
     return _json(p, {"pack": "", "roles": {}})
 
 
+FLEET_USED = {"names": set(), "quotes": set()}   # names and quotes already given out in this draw, so they stay unique across a fleet
+
+
+def reset_fleet():
+    FLEET_USED["names"].clear(); FLEET_USED["quotes"].clear()
+
+
+_TITLES = ("Dr.", "Mr.", "Mrs.", "Ms.", "Sir", "King", "Captain", "Princess", "Professor", "Principal", "Chief", "Lord", "Granny", "Nanny", "Madame")
+
+
+def _short(name):
+    if name.startswith("The ") or len(name.split()) == 1: return name[:18]
+    w = [x for x in name.split() if x not in _TITLES] or name.split()
+    return w[0] if len(w[0]) > 2 else " ".join(w)[:18]
+
+
+def _pick(pool, start, used):
+    for k in range(len(pool)):
+        c = pool[(start + k) % len(pool)]
+        if c not in used: return c
+    return pool[start % len(pool)]
+
+
+def _assign_shows(agents, pack, swarm):
+    """Show-locked, not character-locked: the swarm's show is picked by a hash of its name and its agents draw names from that show
+    (then from the next shows if it runs out), any character in any role. The quote is a random one from the same show, not tied to the
+    character. Both stay unique across the fleet for as long as there are enough."""
+    shows = pack["shows"]; keys = sorted(shows); h = lambda x: int(hashlib.md5(x.encode()).hexdigest(), 16)
+    k0 = h(swarm) % len(keys); order = keys[k0:] + keys[:k0]
+    names = [(n, sh) for sh in order for n in shows[sh]["names"]]; quotes = [q for sh in order for q in shows[sh]["quotes"]]
+    for a in sorted(agents, key=lambda a: a["name"]):
+        i = h(swarm + "/" + a["name"]) % max(len(shows[order[0]]["names"]), 1)
+        pool = [n for n, _ in names]; nm = _pick(pool, i, FLEET_USED["names"]); sh = next(s for n, s in names if n == nm)
+        q = _pick(quotes, h(swarm + "/q/" + a["name"]) % max(len(shows[order[0]]["quotes"]), 1), FLEET_USED["quotes"])
+        FLEET_USED["names"].add(nm); FLEET_USED["quotes"].add(q)
+        a["char"] = {"name": nm, "short": _short(nm), "aside": q, "from": sh}
+
+
 def assign_characters(agents, pack, swarm=""):
+    if pack.get("shows"): return _assign_shows(agents, pack, swarm)
     """Each agent gets a character from its role's list, picked by a hash of swarm and agent name (stable across redraws); a clash inside
     the swarm moves to the next free one. Agents are taken in name order so the result does not depend on roster order."""
     roles, used = pack.get("roles") or {}, set()

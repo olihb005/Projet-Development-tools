@@ -25,4 +25,5 @@ ok "the snapshot is written"      'python3 -c "import json;json.load(open(\"$SWA
 ok "toverify respects the swarm start time" 'q add "Second" "x. files: b.py" 1 >/dev/null; ID2=$(q next w-1 | grep -oE "sm-[a-z0-9]+" | head -1); q done w-1 "$ID2" built >/dev/null; q toverify v-1 | grep -q "$ID2"'
 ok "the next-gen board draws"       '"$SW" board demo --next --no-git && grep -q "Worker" "$SWARM_ROOT/demo/board.html_next.html" || ls "$SWARM_ROOT/demo"/*_next.html'
 ok "the fleet page draws"           '"$SW" fleet "$SWARM_ROOT" --no-git --out "$T/fleet.html" && [ -s "$T/fleet.html" ]'
+ok "show names and quotes are unique" 'python3 -c "import sys;sys.path.insert(0,\"$HERE/swarm\");import swarm_state as s;s.reset_fleet();p=s.load_pack(\"shows\");a=[{\"name\":\"w-%d\"%i,\"role\":\"worker\"} for i in range(8)];s.assign_characters(a,p,\"x\");assert len({x[\"char\"][\"name\"] for x in a})==8 and len({x[\"char\"][\"aside\"] for x in a})==8"'
 [ $fail = 0 ] && echo "all checks passed" || echo "some checks failed"; exit $fail
