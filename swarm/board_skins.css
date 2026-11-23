@@ -1,0 +1,20 @@
+/* Board skins: each is a set of CSS variables on body[data-skin=<key>] plus a few touches. Add a skin here and in board_skins.json. */
+/* colour always means state or load, never decoration alone */
+body,body[data-skin=ink]{--bg:#f6f1e7;--card:#fbf8f1;--ink:#1f1d1a;--mute:#6f685d;--line:#d8cfbd;--live:#6f9a6c;--slow:#c99a3b;--idle:#a49c8c;--l0:#9cbf9c;--l1:#d59a2c;--l2:#b23a2a;--msg:#3e5a8a;--bad:#b23a2a;--warn:#c98a1b;--ok:#5f8a5c;--q:#3e5a8a;--done:#5c6b7a;--accent:#b23a2a;--case:#1f1d1a;--flow:#fffdf6;--onlive:#fff;--halo:#fbf8f1;
+ --tfont:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;--tstyle:italic;--tweight:600;--tspace:0;--bfont:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;--nfont:var(--tfont);--tcase:none;--rad:16px;--shadow:5px 5px 0 #1f1d1a1c;--cardborder:1.5px solid var(--ink);
+ --bgimg:radial-gradient(620px 420px at 6% -4%,#e7c9a855,transparent 70%),radial-gradient(760px 520px at 102% 8%,#c3d6c255,transparent 70%)}
+body[data-skin=tidepool]{--bg:#0a1c26;--card:#0f2633;--ink:#f3efe6;--mute:#a6bcc6;--line:#21414f;--live:#3fd1c2;--slow:#f2c46d;--idle:#587482;--l0:#3fd1c2;--l1:#f2c46d;--l2:#ff7a59;--msg:#a998ff;--bad:#ff7a59;--warn:#f2c46d;--ok:#3fd1c2;--q:#a998ff;--done:#7fa7b8;--accent:#3fd1c2;--case:#06131a;--flow:#eafffb;--onlive:#06222a;--halo:#0b202b;
+ --tfont:Georgia,"Times New Roman",serif;--tstyle:italic;--bfont:system-ui,"Segoe UI",sans-serif;--rad:20px;--shadow:0 10px 40px #0008;--cardborder:1px solid #21414f;
+ --bgimg:radial-gradient(900px 600px at 15% -10%,#123d4c,transparent 70%),radial-gradient(700px 500px at 100% 30%,#1b2a52aa,transparent 70%)}
+body[data-skin=copperplate]{--bg:#efe7d4;--card:#f6f0e1;--ink:#23302c;--mute:#5f6458;--line:#cdbd94;--live:#2f6b5a;--slow:#d9a03f;--idle:#a89f88;--l0:#b9814a;--l1:#d9a03f;--l2:#c8432b;--msg:#2f6b5a;--bad:#c8432b;--warn:#b7801f;--ok:#2f6b5a;--q:#b9814a;--done:#23302c;--accent:#b9814a;--case:#23302c;--flow:#fff3d6;--onlive:#fff;--halo:#efe7d4;
+ --tfont:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;--tstyle:normal;--tweight:700;--tspace:.5px;--tcase:uppercase;--bfont:system-ui,"Segoe UI",sans-serif;--nfont:var(--tfont);--rad:6px;--shadow:0 0 0 1px #cdbd94,3px 3px 0 #23302c22;--cardborder:1.5px solid #23302c;
+ --bgimg:linear-gradient(#23302c08 1px,transparent 1px),linear-gradient(90deg,#23302c08 1px,transparent 1px)}
+body[data-skin=interchange]{--bg:#ffffff;--card:#f3f3f0;--ink:#111;--mute:#555;--line:#dcdcd6;--live:#2bb673;--slow:#f7b32b;--idle:#b9b9b2;--l0:#2bb673;--l1:#f7b32b;--l2:#e4572e;--msg:#555;--bad:#e4572e;--warn:#d4920b;--ok:#2bb673;--q:#1f5fbf;--done:#111;--accent:#e4572e;--case:#111;--flow:#fff;--onlive:#fff;--halo:#fff;
+ --tfont:"Helvetica Neue",Arial,"Nimbus Sans",sans-serif;--tstyle:normal;--tweight:800;--tspace:-.3px;--tcase:uppercase;--bfont:"Helvetica Neue",Arial,sans-serif;--nfont:var(--tfont);--rad:4px;--shadow:none;--cardborder:2px solid #111;--bgimg:none}
+body[data-skin=orrery]{--bg:#140b22;--card:#1e1233;--ink:#f5e9dc;--mute:#b9a9cc;--line:#3a2352;--live:#e8c07d;--slow:#ff6f91;--idle:#6a5585;--l0:#9d8df1;--l1:#e8c07d;--l2:#ff6f91;--msg:#9d8df1;--bad:#ff6f91;--warn:#e8c07d;--ok:#9d8df1;--q:#9d8df1;--done:#cdbfe6;--accent:#e8c07d;--case:#0c0616;--flow:#fff6e0;--onlive:#24122e;--halo:#160c26;
+ --tfont:"Helvetica Neue","Segoe UI Light",system-ui,sans-serif;--tstyle:normal;--tweight:300;--tspace:4px;--tcase:lowercase;--bfont:system-ui,"Segoe UI",sans-serif;--nfont:"Helvetica Neue",system-ui,sans-serif;--rad:22px;--shadow:0 0 0 1px #3a2352;--cardborder:1px solid #3a2352;
+ --bgimg:radial-gradient(800px 600px at 50% -20%,#3a2352,transparent 70%)}
+body[data-skin=copperplate]{background-size:22px 22px,22px 22px,auto}
+body[data-skin=interchange] .k b{font-size:40px}body[data-skin=orrery] .k b{font-weight:200}
+body[data-skin=tidepool] #graph{background:radial-gradient(1100px 700px at 50% 40%,#0f2c3b,#081822)}
+body[data-skin=orrery] #graph{background:radial-gradient(900px 700px at 50% 45%,#24133a,#120a1f)}

@@ -1,0 +1,267 @@
+{
+ "pack": "Nerd pack (Hitchhiker's Guide, Archer, Bond, Star Trek, Discworld, Tolkien)",
+ "note": "Optional pack: --characters nerd. Each agent gets one name from its role's list, picked by a hash of its name so it keeps it. 'aside' is shown only on hover and in empty states, never as a line on the tile.",
+ "roles": {
+  "chief": [
+   {
+    "name": "M",
+    "from": "Bond",
+    "aside": "Bring the slices back in one piece."
+   },
+   {
+    "name": "Deep Thought",
+    "short": "Deep Thought",
+    "from": "Hitchhiker's Guide",
+    "aside": "The answer is 42. The question is on the board."
+   },
+   {
+    "name": "Jean-Luc Picard",
+    "short": "Picard",
+    "from": "Star Trek",
+    "aside": "Make it so. Then verify it."
+   },
+   {
+    "name": "Lord Vetinari",
+    "short": "Vetinari",
+    "from": "Discworld",
+    "aside": "The queue flows because I allow it to."
+   },
+   {
+    "name": "Malory Archer",
+    "short": "Malory",
+    "from": "Archer",
+    "aside": "Do you want a stalled queue? Because that's how you get a stalled queue."
+   },
+   {
+    "name": "Gandalf",
+    "from": "Tolkien",
+    "aside": "A slice is never late. It ships precisely when it means to."
+   }
+  ],
+  "manager": [
+   {
+    "name": "Miss Moneypenny",
+    "short": "Moneypenny",
+    "from": "Bond",
+    "aside": "He'll see your slice now. Briefly."
+   },
+   {
+    "name": "Ford Prefect",
+    "short": "Ford",
+    "from": "Hitchhiker's Guide",
+    "aside": "Know where your towel is. And your backlog."
+   },
+   {
+    "name": "Cyril Figgis",
+    "short": "Cyril",
+    "from": "Archer",
+    "aside": "I'm the comptroller. I control the comps."
+   },
+   {
+    "name": "William Riker",
+    "short": "Riker",
+    "from": "Star Trek",
+    "aside": "Number One, reporting. Shields up, queue full."
+   },
+   {
+    "name": "Captain Carrot",
+    "short": "Carrot",
+    "from": "Discworld",
+    "aside": "Everyone has a slice. That's only fair."
+   },
+   {
+    "name": "Elrond",
+    "from": "Tolkien",
+    "aside": "You have been summoned here to clear the queue."
+   }
+  ],
+  "worker": [
+   {
+    "name": "Arthur Dent",
+    "short": "Arthur",
+    "from": "Hitchhiker's Guide",
+    "aside": "I never could get the hang of Thursdays."
+   },
+   {
+    "name": "Zaphod Beeblebrox",
+    "short": "Zaphod",
+    "from": "Hitchhiker's Guide",
+    "aside": "Two heads, one slice. Easy."
+   },
+   {
+    "name": "Trillian",
+    "from": "Hitchhiker's Guide",
+    "aside": "Improbable? Yes. Done? Also yes."
+   },
+   {
+    "name": "Slartibartfast",
+    "short": "Slarti",
+    "from": "Hitchhiker's Guide",
+    "aside": "I did the fjords. This module is nothing."
+   },
+   {
+    "name": "Sterling Archer",
+    "short": "Archer",
+    "from": "Archer",
+    "aside": "Danger zone!"
+   },
+   {
+    "name": "Lana Kane",
+    "short": "Lana",
+    "from": "Archer",
+    "aside": "Yuuup."
+   },
+   {
+    "name": "Pam Poovey",
+    "short": "Pam",
+    "from": "Archer",
+    "aside": "I'll pin it down. Literally."
+   },
+   {
+    "name": "Dr. Krieger",
+    "short": "Krieger",
+    "from": "Archer",
+    "aside": "It's not a bug. It's a clone."
+   },
+   {
+    "name": "Cheryl Tunt",
+    "short": "Cheryl",
+    "from": "Archer",
+    "aside": "I'm bored. Give me the dangerous slice."
+   },
+   {
+    "name": "James Bond",
+    "short": "Bond",
+    "from": "Bond",
+    "aside": "Committed, not pushed."
+   },
+   {
+    "name": "Felix Leiter",
+    "short": "Felix",
+    "from": "Bond",
+    "aside": "Backup's here. Where's the merge?"
+   },
+   {
+    "name": "Montgomery Scott",
+    "short": "Scotty",
+    "from": "Star Trek",
+    "aside": "I'm giving her all she's got!"
+   },
+   {
+    "name": "Geordi La Forge",
+    "short": "Geordi",
+    "from": "Star Trek",
+    "aside": "Reroute it through the deflector array."
+   },
+   {
+    "name": "Data",
+    "from": "Star Trek",
+    "aside": "Fascinating. The tests have passed."
+   },
+   {
+    "name": "Rincewind",
+    "from": "Discworld",
+    "aside": "Running away is a perfectly valid strategy."
+   },
+   {
+    "name": "Samwise Gamgee",
+    "short": "Sam",
+    "from": "Tolkien",
+    "aside": "I can't carry the slice, but I can carry you."
+   },
+   {
+    "name": "Gimli",
+    "from": "Tolkien",
+    "aside": "And my axe. And my unit tests."
+   },
+   {
+    "name": "Ponder Stibbons",
+    "short": "Ponder",
+    "from": "Discworld",
+    "aside": "Hex says it should work. Hex is usually right."
+   }
+  ],
+  "verifier": [
+   {
+    "name": "Marvin",
+    "from": "Hitchhiker's Guide",
+    "aside": "Brain the size of a planet, and they ask me to run the tests."
+   },
+   {
+    "name": "Q",
+    "from": "Bond",
+    "aside": "Now pay attention. I'll only check it once."
+   },
+   {
+    "name": "Spock",
+    "from": "Star Trek",
+    "aside": "The output is... logical."
+   },
+   {
+    "name": "Commander Vimes",
+    "short": "Vimes",
+    "from": "Discworld",
+    "aside": "Who watches the diffs? I do."
+   },
+   {
+    "name": "Granny Weatherwax",
+    "short": "Granny",
+    "from": "Discworld",
+    "aside": "I ain't nice. I'm right."
+   },
+   {
+    "name": "Odo",
+    "from": "Star Trek",
+    "aside": "Nobody commits on my promenade unchecked."
+   },
+   {
+    "name": "Ray Gillette",
+    "short": "Ray",
+    "from": "Archer",
+    "aside": "Hold it. That doesn't hold."
+   }
+  ],
+  "researcher": [
+   {
+    "name": "The Librarian",
+    "short": "Librarian",
+    "from": "Discworld",
+    "aside": "Ook."
+   },
+   {
+    "name": "Hari Seldon",
+    "short": "Seldon",
+    "from": "Foundation",
+    "aside": "I've modelled the next thousand slices."
+   },
+   {
+    "name": "The Guide",
+    "from": "Hitchhiker's Guide",
+    "aside": "Don't Panic."
+   },
+   {
+    "name": "Radagast",
+    "from": "Tolkien",
+    "aside": "I've been reading the bark. And the logs."
+   }
+  ],
+  "other": [
+   {
+    "name": "Babel Fish",
+    "from": "Hitchhiker's Guide",
+    "aside": "Translating everything. Mostly."
+   },
+   {
+    "name": "Eddie the Computer",
+    "short": "Eddie",
+    "from": "Hitchhiker's Guide",
+    "aside": "Hi there! This is going to be a great slice!"
+   },
+   {
+    "name": "Luggage",
+    "from": "Discworld",
+    "aside": "(follows you everywhere)"
+   }
+  ]
+ }
+}

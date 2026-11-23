@@ -1,0 +1,162 @@
+{
+ "pack": "Neutral pack",
+ "note": "Default pack: plain call-signs. Swap with --characters <name|path.json> or SWARM_CHARACTERS; --characters none shows roles only.",
+ "roles": {
+  "chief": [
+   {
+    "name": "Summit",
+    "aside": "Sets the direction."
+   },
+   {
+    "name": "Compass",
+    "aside": "Sets the direction."
+   },
+   {
+    "name": "Meridian",
+    "aside": "Sets the direction."
+   },
+   {
+    "name": "Pilot",
+    "aside": "Sets the direction."
+   }
+  ],
+  "manager": [
+   {
+    "name": "Harbour",
+    "aside": "Keeps the queue moving."
+   },
+   {
+    "name": "Beacon",
+    "aside": "Keeps the queue moving."
+   },
+   {
+    "name": "Lantern",
+    "aside": "Keeps the queue moving."
+   },
+   {
+    "name": "Keel",
+    "aside": "Keeps the queue moving."
+   }
+  ],
+  "worker": [
+   {
+    "name": "Wren",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Rowan",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Finch",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Alder",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Heron",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Birch",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Kestrel",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Maple",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Linnet",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Hazel",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Robin",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Aspen",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Swift",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Cedar",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Plover",
+    "aside": "Builds one slice at a time."
+   },
+   {
+    "name": "Larch",
+    "aside": "Builds one slice at a time."
+   }
+  ],
+  "verifier": [
+   {
+    "name": "Gauge",
+    "aside": "Checks before anything is committed."
+   },
+   {
+    "name": "Plumb",
+    "aside": "Checks before anything is committed."
+   },
+   {
+    "name": "Sextant",
+    "aside": "Checks before anything is committed."
+   },
+   {
+    "name": "Level",
+    "aside": "Checks before anything is committed."
+   },
+   {
+    "name": "Caliper",
+    "aside": "Checks before anything is committed."
+   },
+   {
+    "name": "Lens",
+    "aside": "Checks before anything is committed."
+   }
+  ],
+  "researcher": [
+   {
+    "name": "Atlas",
+    "aside": "Reads ahead."
+   },
+   {
+    "name": "Scout",
+    "aside": "Reads ahead."
+   },
+   {
+    "name": "Survey",
+    "aside": "Reads ahead."
+   }
+  ],
+  "other": [
+   {
+    "name": "Relay",
+    "aside": "Helps out."
+   },
+   {
+    "name": "Signal",
+    "aside": "Helps out."
+   },
+   {
+    "name": "Tally",
+    "aside": "Helps out."
+   }
+  ]
+ }
+}

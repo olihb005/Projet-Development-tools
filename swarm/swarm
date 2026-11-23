@@ -2,6 +2,7 @@
 """swarm: a reusable multi-agent swarm kit (queue, messages, wake, board, backup). See README.md.
   swarm init <name> --repo <path> [--branch B] [--run DIR] [--board HTML] [--subagents DIR] [--only REGEX]
   swarm q <name> <q.sh command...>        swarm board <name> [--loop N | --live [--port P]]       swarm wake <name> <who> [beat] [idle]
+  swarm board <name> --next [--loop N | --serve [--port P]]   (next-gen board)      swarm fleet [SOURCE ...] [--serve]   (many swarms, one page)
   swarm backup <name> <dest> [END]        swarm status <name>                 swarm stop <name>"""
 import json, os, re, shutil, signal, subprocess, sys, time, glob
 TOOLS = os.path.dirname(os.path.abspath(__file__)); HOME = os.path.expanduser("~")
@@ -109,12 +110,15 @@ def main():
     if not a or a[0] in ("-h", "--help", "help"): print(__doc__); return
     cmd = a.pop(0)
     if cmd == "init": return init(a)
+    if cmd == "fleet": os.execve(sys.executable, [sys.executable, os.path.join(TOOLS, "fleet_next.py")] + a, dict(os.environ))
     if not a: die(f"usage: swarm {cmd} <name> ...")
     name = a.pop(0)
     if cmd == "q": os.execve(os.path.join(TOOLS, "q.sh"), [os.path.join(TOOLS, "q.sh")] + a, env_for(name))
     if cmd == "status": return status(name)
     if cmd == "stop": return stop(name)
     c = load(name)
+    if cmd == "board" and "--next" in a:
+        a.remove("--next"); os.execve(sys.executable, [sys.executable, os.path.join(TOOLS, "board_next.py")] + a, env_for(name))
     if cmd == "board" and "--live" in a:
         a.remove("--live"); e = env_for(name)
         e.update(SWARM_RUN=c["run"], SWARM_REPO=c["repo"], SWARM_Q=os.path.join(TOOLS, "q.sh"), SWARM_SUBAGENTS=c.get("subagents") or "",

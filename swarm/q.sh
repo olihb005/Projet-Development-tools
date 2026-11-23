@@ -142,20 +142,20 @@ json.dump({"t":time.time(),"hm":time.strftime("%H:%M"),"by":sys.argv[2],"title":
 PYPOST
         say "$1" all "posted a deliverable: $2"; echo "posted to the board's Recent deliverables" ;;
   toverify) who=$1; deliver "$who"; echo "$HINT"; V="$OUT_DIR/verify.log"; touch "$V"   # a verifier claims the oldest closed slice nobody has verified yet
-    pick=$(snapget closed | V="$V" python3 -c "
+    pick=$(snapget closed | V="$V" SINCE="${SW_STARTED/ /T}" python3 -c "
 import json,sys,os
 seen={l.split()[0] for l in open(os.environ['V']) if l.strip()}
 for i in sorted(json.load(sys.stdin),key=lambda i:i.get('closed_at') or ''):
-    if i['id'] not in seen and not i['title'].startswith(('ZZ','TEST','Board is live')) and (i.get('closed_at') or '')>='2026-11-22T18:00':
+    if i['id'] not in seen and not i['title'].startswith(('ZZ','TEST','Board is live')) and (i.get('closed_at') or '')>=os.environ['SINCE']:
         print(i['id']); break")
     [ -z "$pick" ] && { echo "NONE: nothing closed is waiting for a verifier"; exit 0; }
     ( flock 9; grep -q "^$pick " "$V" && exit 3; echo "$pick $who claimed $(date '+%H:%M')" >> "$V" ) 9>"$V.lock" || { echo "NONE: taken, run again"; exit 0; }
     say "$who" "$(owner_of "$pick")" "checking your slice $pick now"
     bd show "$pick" 2>/dev/null | sed -n '1,70p' ;;
-  toverify_count) V="$OUT_DIR/verify.log"; touch "$V"; snapget closed | V="$V" python3 -c "
+  toverify_count) V="$OUT_DIR/verify.log"; touch "$V"; snapget closed | V="$V" SINCE="${SW_STARTED/ /T}" python3 -c "
 import json,sys,os
 seen={l.split()[0] for l in open(os.environ['V']) if l.strip()}
-print(sum(1 for i in json.load(sys.stdin) if i['id'] not in seen and not i['title'].startswith(('ZZ','TEST','Board is live')) and (i.get('closed_at') or '')>='2026-11-22T20:45'))" ;;
+print(sum(1 for i in json.load(sys.stdin) if i['id'] not in seen and not i['title'].startswith(('ZZ','TEST','Board is live')) and (i.get('closed_at') or '')>=os.environ['SINCE']))" ;;
   verified) say "$1" "$(owner_of "$2")" "verdict on $2: $3"; say "$1" chief "verdict on $2: $(echo "$3" | cut -c1-60)"; deliver "$1"; echo "$2 $1 verdict $(date '+%H:%M') $3" >> "$OUT_DIR/verify.log"; BD_ACTOR="$1" bd comment "$2" "verifier $1: $3" >/dev/null 2>&1; echo "recorded" ;;
   *) sed -n '2,19p' "$0" ;;
 esac

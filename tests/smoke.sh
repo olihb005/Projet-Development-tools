@@ -22,4 +22,7 @@ ok "the commit is recorded"       'q committed w-1 "$ID" abc1234 && grep -q abc1
 ok "a message reaches its inbox"  'q tell w-1 v-1 "thanks" && q inbox v-1 | grep -q thanks'
 ok "a headline is posted"         'q post w-1 "1 of 1 slices verified" "smoke" && grep -q "1 of 1" "$SWARM_ROOT/demo/deliverables.jsonl"'
 ok "the snapshot is written"      'python3 -c "import json;json.load(open(\"$SWARM_ROOT/demo/queue.json\"))"'
+ok "toverify respects the swarm start time" 'q add "Second" "x. files: b.py" 1 >/dev/null; ID2=$(q next w-1 | grep -oE "sm-[a-z0-9]+" | head -1); q done w-1 "$ID2" built >/dev/null; q toverify v-1 | grep -q "$ID2"'
+ok "the next-gen board draws"       '"$SW" board demo --next --no-git && grep -q "Worker" "$SWARM_ROOT/demo/board.html_next.html" || ls "$SWARM_ROOT/demo"/*_next.html'
+ok "the fleet page draws"           '"$SW" fleet "$SWARM_ROOT" --no-git --out "$T/fleet.html" && [ -s "$T/fleet.html" ]'
 [ $fail = 0 ] && echo "all checks passed" || echo "some checks failed"; exit $fail

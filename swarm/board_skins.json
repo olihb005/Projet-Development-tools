@@ -1,0 +1,100 @@
+{
+ "note": "Skins for the next-gen board. Keys must match board_skins.css. shape: circle | chip | station; fx: wash | glow | grid | stars | none; cased: draw a dark casing under work lines; palette: colours for swarms on a fleet page.",
+ "default": {
+  "skin": "ink",
+  "layout": "loop",
+  "tab": "drawer"
+ },
+ "skins": {
+  "ink": {
+   "label": "Ink & Wash",
+   "shape": "circle",
+   "fx": "wash",
+   "cased": true,
+   "palette": [
+    "#3e5a8a",
+    "#7b4a70",
+    "#5f8a5c",
+    "#c99a3b",
+    "#b23a2a",
+    "#2f7f86",
+    "#8a6a3e",
+    "#5a5f8a",
+    "#9a4a5a",
+    "#4a7a6a"
+   ]
+  },
+  "tidepool": {
+   "label": "Tidepool",
+   "shape": "circle",
+   "fx": "glow",
+   "cased": false,
+   "palette": [
+    "#3fd1c2",
+    "#a998ff",
+    "#f2c46d",
+    "#ff7a59",
+    "#7fd3ff",
+    "#c6f27a",
+    "#ff9ad5",
+    "#9be3c9",
+    "#ffd38a",
+    "#8fb6ff"
+   ]
+  },
+  "copperplate": {
+   "label": "Copperplate",
+   "shape": "chip",
+   "fx": "grid",
+   "cased": false,
+   "palette": [
+    "#b9814a",
+    "#2f6b5a",
+    "#c8432b",
+    "#d9a03f",
+    "#5a6f8a",
+    "#7a4a3a",
+    "#3f7f6f",
+    "#9a6a2a",
+    "#6a4a6a",
+    "#4a5a3a"
+   ]
+  },
+  "interchange": {
+   "label": "Interchange",
+   "shape": "station",
+   "fx": "none",
+   "cased": true,
+   "palette": [
+    "#1f5fbf",
+    "#e4572e",
+    "#2bb673",
+    "#8e44ad",
+    "#f7b32b",
+    "#00a0b0",
+    "#c2185b",
+    "#6d4c41",
+    "#455a64",
+    "#7cb342"
+   ]
+  },
+  "orrery": {
+   "label": "Orrery",
+   "shape": "circle",
+   "fx": "stars",
+   "cased": false,
+   "palette": [
+    "#e8c07d",
+    "#9d8df1",
+    "#ff6f91",
+    "#7fd3c2",
+    "#f5a97f",
+    "#c6a7ff",
+    "#ffd38a",
+    "#86b6ff",
+    "#ff9ad5",
+    "#b8e08a"
+   ]
+  }
+ }
+}

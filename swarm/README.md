@@ -35,6 +35,7 @@ $S stop demo                                     # stops the board and backup lo
 - `swarm backup <name> <dest> [END]`: rsync loop of the repo folder (minus .git, caches) to `dest` every two minutes, until END
   (default 24 h). The dest's parent folder must exist.
 - `swarm status <name>`: roster, queue, who is idle, last messages, verified commits, loop pids.
+- `swarm board <name> --next [--loop N | --serve]`: the next-generation board (five skins, five layouts, character packs, plain-English feed, queue load with runway). `swarm fleet [SOURCE ...] [--serve]`: any number of swarms, from any repos, on one page. Reads only the run files; see `docs/NEXT_BOARD.md`. The original board is unchanged.
 - `swarm stop <name>`: stops this swarm's board and backup loops by the pid files they wrote; never pattern-kills.
 
 Scripts can also be run directly with `SWARM_CONFIG=<path to swarm.json>`.
