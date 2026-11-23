@@ -24,13 +24,18 @@ you launch the chief, audit, approve and push. You do not build.
    guessed wrong (board shows everyone idle), find the right one and edit `subagents` in swarm.json.
 5. Start the board: run `$S board <name> --loop 10` as a background Bash command, then open the file named in swarm.json
    (`xdg-open <board>`). Optionally `$S backup <name> <dest>` in the background.
+   Prefer the next-generation board when it is installed (`$S board <name> --next --loop 10`, or `--serve` for a live local page): five
+   skins, five layouts, agents with names and a plain line on what each is doing, plain-English logs, and the queue's load with its
+   runway (ready slices divided by workers). With several swarms, even in different repos, run `$S fleet` (every swarm under the swarm
+   root) or `$S fleet a/swarm.json b/swarm.json --serve` for one page showing them all, with the ones that need attention first.
+   `$S stop` does not stop a `--next` loop or server: end it with Ctrl-C or by its process id, and bind nothing but 127.0.0.1.
 
 ## Audit (every few minutes while it runs)
 
 `$S status <name>` shows roster, queue, who is IDLE, last messages and verified commits. Check: anyone idle while slices are
 ready (the manager should wake them; if not, `$S q <name> tell main <who> "<text>"` and SendMessage its id); queue depth under
 three ready (tell the chief); verdicts in `verify.log` that are "partly" or "does not hold" with no fix queued; commits awaiting
-approval (`git -C <repo> log origin/<branch>..HEAD`); anything not matching the user's rules. Fix deviations yourself or by
+approval (`git -C <repo> log origin/<branch>..HEAD`); anything not matching the user's rules; a queue whose runway is under one round, or a swarm flagged stalled or empty on the fleet page. Fix deviations yourself or by
 message, do not wait to be asked. Keep your own messages few: each wake re-reads that agent's history.
 
 ## Approve and push
