@@ -5,7 +5,7 @@ Skins live in board_skins.css + board_skins.json, character packs in packs/*.jso
 Skin, layout and node tab are chosen on the page and kept in the browser and the URL hash (#skin=tidepool&layout=subway&tab=strip).
 usage:
   SWARM_CONFIG=<swarm.json> board_next.py [--out FILE] [--loop SECONDS] [--until YYYYmmddHHMM] [--as-of auto|EPOCH] [--no-git]
-                                          [--characters neutral|nerd|none|PACK.json] [--skin K] [--layout K] [--tab K]
+                                          [--characters neutral|shows|nerd|none|PACK.json] [--skin K] [--layout K] [--tab K]
   SWARM_CONFIG=<swarm.json> board_next.py --serve [--port 8898]        live page on 127.0.0.1: polls every 2.5 s, never reloads
 --out defaults to <board path from swarm.json>_next.html. --as-of auto judges working/idle against the last write in the run
 folder instead of now (for replaying a recorded run)."""

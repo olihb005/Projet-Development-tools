@@ -26,4 +26,15 @@ ok "toverify respects the swarm start time" 'q add "Second" "x. files: b.py" 1 >
 ok "the next-gen board draws"       '"$SW" board demo --next --no-git && grep -q "Worker" "$SWARM_ROOT/demo/board.html_next.html" || ls "$SWARM_ROOT/demo"/*_next.html'
 ok "the fleet page draws"           '"$SW" fleet "$SWARM_ROOT" --no-git --out "$T/fleet.html" && [ -s "$T/fleet.html" ]'
 ok "show names and quotes are unique" 'python3 -c "import sys;sys.path.insert(0,\"$HERE/swarm\");import swarm_state as s;s.reset_fleet();p=s.load_pack(\"shows\");a=[{\"name\":\"w-%d\"%i,\"role\":\"worker\"} for i in range(8)];s.assign_characters(a,p,\"x\");assert len({x[\"char\"][\"name\"] for x in a})==8 and len({x[\"char\"][\"aside\"] for x in a})==8"'
+R="$SWARM_ROOT/demo"
+ok "a researcher joins the roster"  'q join r-1 abc123 researcher manager | grep -q "joined: r-1" && grep -q "^r-1|abc123|researcher|" "$R/roster.txt"'
+ok "a second chief joins"           'q join chief-2 def456 chief main | grep -q joined'
+printf '%s\n' '{"id":"g1","title":"First goal","priority":0}' '{"id":"g2","title":"Second goal","status":"done"}' > "$R/goals.jsonl"
+ST="import sys,json;sys.path.insert(0,\"$HERE/swarm\");import swarm_state as s;d=s.read_swarm(\"$R/swarm.json\",git=False,pack=s.load_pack(\"shows\"));Q=d[\"stageq\"]"
+ok "the state reader sees the researcher and both chiefs" 'python3 -c "$ST;r=[a[\"role\"] for a in d[\"agents\"]];assert \"researcher\" in r and \"chief-2\" in [a[\"name\"] for a in d[\"agents\"] if a[\"role\"]==\"chief\"]"'
+ok "goals waiting to be broken down: open goals only" 'python3 -c "$ST;assert Q[\"goals\"][\"show\"] and Q[\"goals\"][\"n\"]==1 and Q[\"goals\"][\"label\"]==\"goals waiting to be broken down\""'
+ok "the five stage queues have their names" 'python3 -c "$ST;assert [Q[k][\"label\"] for k in (\"goals\",\"build\",\"review\",\"clear\",\"merge\")]==[\"goals waiting to be broken down\",\"tasks waiting to be built\",\"built work waiting for review\",\"reviewed work waiting to be cleared\",\"cleared work waiting to merge\"]"'
+ok "built work waits for review, cleared work waits to merge" 'python3 -c "$ST;assert Q[\"review\"][\"n\"]==1 and Q[\"merge\"][\"n\"]==1 and Q[\"clear\"][\"n\"]==0 and d[\"done\"][\"n\"]==1"'
+ok "no goals file: the goals queue is hidden" 'rm "$R/goals.jsonl"; python3 -c "$ST;assert not Q[\"goals\"][\"show\"]"'
+ok "the board draws researchers and the stage queues" '"$SW" board demo --next --no-git --characters shows >/dev/null; f=$(ls "$R"/*_next.html "$R"/board_next.html 2>/dev/null | head -1); grep -q "researcher" "$f" && grep -q "cleared work waiting to merge" "$f"'
 [ $fail = 0 ] && echo "all checks passed" || echo "some checks failed"; exit $fail

@@ -42,18 +42,18 @@ def tagline(title):
 
 
 def load_pack(spec=None):
-    """A character pack: a name in packs/ (neutral, nerd), a path to a JSON file, or none. Default: neutral."""
+    """A character pack: a name in packs/ (neutral, nerd, shows), a path to a JSON file, or none. Default: neutral."""
     spec = spec or os.environ.get("SWARM_CHARACTERS") or "neutral"
     if spec == "none": return {"pack": "", "roles": {}}
     p = spec if spec.endswith(".json") or os.sep in spec else os.path.join(os.path.dirname(os.path.abspath(__file__)), "packs", spec + ".json")
     return _json(p, {"pack": "", "roles": {}})
 
 
-FLEET_USED = {"names": set(), "quotes": set()}   # names and quotes already given out in this draw, so they stay unique across a fleet
+FLEET_USED = {"names": set(), "quotes": set(), "shorts": set()}   # names and quotes already given out in this draw, so they stay unique across a fleet
 
 
 def reset_fleet():
-    FLEET_USED["names"].clear(); FLEET_USED["quotes"].clear()
+    for v in FLEET_USED.values(): v.clear()
 
 
 _TITLES = ("Dr.", "Mr.", "Mrs.", "Ms.", "Sir", "King", "Captain", "Princess", "Professor", "Principal", "Chief", "Lord", "Granny", "Nanny", "Madame")
@@ -84,22 +84,26 @@ def _assign_shows(agents, pack, swarm):
         pool = [n for n, _ in names]; nm = _pick(pool, i, FLEET_USED["names"]); sh = next(s for n, s in names if n == nm)
         q = _pick(quotes, h(swarm + "/q/" + a["name"]) % max(len(shows[order[0]]["quotes"]), 1), FLEET_USED["quotes"])
         FLEET_USED["names"].add(nm); FLEET_USED["quotes"].add(q)
-        a["char"] = {"name": nm, "short": _short(nm), "aside": q, "from": sh}
+        st = _short(nm); st = nm[:22] if st in FLEET_USED["shorts"] else st; FLEET_USED["shorts"].add(st)   # short names unique too
+        a["char"] = {"name": nm, "short": st, "aside": q, "from": sh}
 
 
 def assign_characters(agents, pack, swarm=""):
     if pack.get("shows"): return _assign_shows(agents, pack, swarm)
     """Each agent gets a character from its role's list, picked by a hash of swarm and agent name (stable across redraws); a clash inside
     the swarm moves to the next free one. Agents are taken in name order so the result does not depend on roster order."""
-    roles, used = pack.get("roles") or {}, set()
+    roles, used = pack.get("roles") or {}, FLEET_USED["names"]     # unique across the whole fleet drawn in this pass
     for a in sorted(agents, key=lambda a: a["name"]):
         pool = roles.get(a["role"]) or roles.get("other") or []
         if not pool: a["char"] = None; continue
         i0 = int(hashlib.md5((swarm + "/" + a["name"]).encode()).hexdigest(), 16) % len(pool)
-        for k in range(len(pool)):
-            c = pool[(i0 + k) % len(pool)]
-            if c["name"] not in used or k == len(pool) - 1: break
-        used.add(c["name"]); a["char"] = {"name": c["name"], "short": c.get("short") or c["name"], "aside": c.get("aside") or c.get("quote") or "", "from": c.get("from", "")}
+        c = next((pool[(i0 + k) % len(pool)] for k in range(len(pool)) if pool[(i0 + k) % len(pool)]["name"] not in used), None)
+        nm, sh = (c["name"], c.get("short") or c["name"]) if c else None, None
+        if not c:                                                   # role list used up across the fleet: number the names
+            c = pool[i0]; k = 2
+            while f"{c['name']} {k}" in used: k += 1
+            nm, sh = f"{c['name']} {k}", f"{c.get('short') or c['name']} {k}"
+        used.add(nm); a["char"] = {"name": nm, "short": sh, "aside": c.get("aside") or c.get("quote") or "", "from": c.get("from", "")}
 
 
 def role_word(name, role):
@@ -232,7 +236,8 @@ def read_swarm(cfg_path, as_of=None, git=True, pack=None):
         # what it is doing, in plain words: its own label (q.sh doing) first, then the slice it holds or checks, then its state
         tag = own.get("text") if own and now - own.get("t", 0) < 1500 else ("Building " + sl["tag"]) if sl else ("Checking " + chk["tag"]) if chk else \
             "Idle, waiting for a message" if st == "idle" else "Quiet for a few minutes" if st == "slow" else \
-            {"chief": "Steering the swarm", "manager": "Running the queue", "worker": "Between slices", "verifier": "Looking for work to check"}.get(role, "Working")
+            {"chief": "Steering the swarm", "manager": "Running the queue", "worker": "Between slices", "verifier": "Looking for work to check",
+             "researcher": "Breaking goals into tasks"}.get(role, "Working")
         agents.append({"name": nm, "id": aid, "role": role, "by": f[3] if len(f) > 3 else "", "at": f[4] if len(f) > 4 else "",
                        "state": st, "ago": int(m) if mt else None, "slice": sl, "check": chk, "tag": tag, "acts": actions(p) if mt else []})
     assign_characters(agents, pack if pack is not None else load_pack(), name)
@@ -255,6 +260,24 @@ def read_swarm(cfg_path, as_of=None, git=True, pack=None):
         goal = {"text": g0[:140], "lines": [l for l in L if not l.lower().startswith("goal:")][:10], "done": int(m.group(1)) if m else None,
                 "total": int(m.group(2)) if m else None, "file": os.path.relpath(acc[-1], run)}
     total = len(closed) + len(prog) + len(ready)
+    # ---- the five named stage queues, each an item list (id, title, priority, stage) drawn before the role that takes from it
+    gpath = os.path.join(run, "goals.jsonl"); goals = []
+    for ln in _lines(gpath):
+        try: g = json.loads(ln)
+        except Exception: continue
+        if isinstance(g, dict) and str(g.get("status", "")).lower() not in ("done", "closed", "broken down", "split"):
+            goals.append({"id": str(g.get("id") or ""), "title": clean_title(str(g.get("title") or g.get("text") or ""))[:120], "p": g.get("priority"), "st": "goal"})
+    it = lambda i, st: {"id": i, "title": clean_title(titles.get(i, i))[:120], "p": next((x.get("priority") for x in closed if x.get("id") == i), None), "st": st}
+    unp_set = set(unp)
+    merge_ids = [k for k, v in committed.items() if not git or not repo or any(v["h"].startswith(u) or u.startswith(v["h"]) for u in unp_set)]
+    stageq = {
+        "goals": {"label": "goals waiting to be broken down", "show": os.path.isfile(gpath) and bool(goals), "n": len(goals), "items": goals[:60]},
+        "build": {"label": "tasks waiting to be built", "show": True, "n": len(ready), "items": [dict(x, st="ready") for x in ready[:60]]},
+        "review": {"label": "built work waiting for review", "show": True, "n": len([i for i in cids if i not in verdict]),
+                   "items": [it(i, "checking" if i in claimed else "built") for i in cids if i not in verdict][:60]},
+        "clear": {"label": "reviewed work waiting to be cleared", "show": True, "n": len(holds_uncommitted), "items": [it(i, "holds") for i in holds_uncommitted][:60]},
+        "merge": {"label": "cleared work waiting to merge", "show": True, "n": len(merge_ids), "items": [it(i, "committed") for i in merge_ids][-60:]},
+    }
     if goal["done"] is None: goal.update(done=len([i for i in verdict.values() if i == "holds"]), total=total or None, derived=True)
     # ---- queue load, runway and warnings
     runway = len(ready) / max(nw, 1)
@@ -280,7 +303,8 @@ def read_swarm(cfg_path, as_of=None, git=True, pack=None):
     msg_t = [m["t"] for m in msgs]
     deliv = [json.loads(l) for l in _lines(os.path.join(run, "deliverables.jsonl")) if l.strip().startswith("{")][-8:][::-1]
     return {"name": name, "cfg": cfg_path, "started": started, "started_epoch": started_epoch, "as_of": now,
-            "goal": goal, "agents": agents, "workers": nw, "live": live,
+            "goal": goal, "agents": agents, "workers": nw, "live": live, "stageq": stageq,
+            "done": {"n": len(committed), "total": total, "pct": round(100 * len(committed) / total) if total else 0},
             "q": {"ready": ready[:60], "nready": len(ready), "prog": prog, "nprog": len(prog), "nbuilt": len(closed), "total": total},
             "stages": {"ready": len(ready), "building": len(prog), "awaiting": len(awaiting), "checking": len(checking),
                        "holds": len(holds_uncommitted), "committed": len(committed), "back": len(back)},

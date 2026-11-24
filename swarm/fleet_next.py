@@ -5,7 +5,7 @@ agent count, packed into balanced rows under one main session; a table gives eve
 load; click a pool or a row to open that swarm's full board on the same page. Same skins, layouts, packs and tabs as board_next.py.
 usage:
   fleet_next.py [SOURCE ...] [--title T] [--out FILE] [--loop SECONDS] [--until YYYYmmddHHMM] [--as-of auto|EPOCH] [--no-git]
-                [--characters neutral|nerd|none|PACK.json] [--skin K] [--layout K] [--tab K]
+                [--characters neutral|shows|nerd|none|PACK.json] [--skin K] [--layout K] [--tab K]
   fleet_next.py [SOURCE ...] --serve [--port 8897]
 SOURCE is any mix of: a swarm.json; a directory (its */swarm.json, swarms/*/swarm.json or own swarm.json); a quoted glob; or a
 fleet.json {"title": "...", "swarms": [SOURCE, ...]} whose entries are relative to it. With no SOURCE: every swarm under

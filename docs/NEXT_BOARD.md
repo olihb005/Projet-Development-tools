@@ -12,7 +12,7 @@ It is additive: the original board scripts are unchanged and still work.
 | `fleet_next.py` | Any number of swarms on one page; same outputs |
 | `board_next_page.html` | The page template: one JS app that draws a swarm or a fleet |
 | `board_skins.css`, `board_skins.json` | The five skins, as data. The JSON also holds the default skin, layout and tab |
-| `packs/neutral.json` (default), `packs/nerd.json` | Character packs, as data |
+| `packs/neutral.json` (default), `packs/shows.json`, `packs/nerd.json` | Character packs, as data |
 
 ## How to run
 
@@ -29,7 +29,7 @@ $K/fleet_next.py fleet.json --serve                                  # or any mi
 
 | Option | What it does |
 |---|---|
-| `--characters neutral\|nerd\|none\|PACK.json` (or `SWARM_CHARACTERS`) | Character pack. `neutral` is the default |
+| `--characters neutral\|shows\|nerd\|none\|PACK.json` (or `SWARM_CHARACTERS`) | Character pack. `neutral` is the default; `shows` locks each swarm to one TV show |
 | `--skin`, `--layout`, `--tab` | Change the page default for this run. The kit default comes from `board_skins.json` |
 | `--no-git` | Skip the three cheap `git log` calls per swarm |
 | `--as-of auto` | Judge working and idle against the last write in the run folder; for replaying a recorded or fake run |
@@ -119,7 +119,31 @@ orbit, circuit). Any layout can wear any skin. Each skin is a CSS variable set p
 **Not carried over from the current live page**: the project-specific scoreboard table and the deliverable cards (the file is
 read but not drawn), hover path tracing, and the slice-path view.
 
+## Roles, stage queues and output
+
+**Roles.** The roster's role column decides where an agent is drawn: `chief`, `manager`, `researcher`, `worker`, `verifier`
+(anything else is drawn beside the manager). Add a researcher with `swarm q <name> join r-1 <agent id> researcher manager`. A swarm
+may have more than one chief (`join chief-2 <id> chief main`): every chief is drawn and wired, and main sits above all of them. In a
+fleet, main draws a line to every chief of every swarm. Character names are unique across the whole page, for every pack.
+
+**Five named stage queues**, each drawn before the role that takes from it, all read from the run folder:
+
+| Queue | Read from | Before |
+|---|---|---|
+| goals waiting to be broken down | `<run>/goals.jsonl`, one JSON object per line `{"id","title","priority","status"}`; a `status` of done, closed, split or broken down drops it. No file or no open goal: the queue is hidden | researchers |
+| tasks waiting to be built | open slices in `queue.json` (keeps the runway and low/empty warnings) | workers |
+| built work waiting for review | closed slices with no verdict in `verify.log` | verifiers |
+| reviewed work waiting to be cleared | verdict `holds`, not yet in `commits_verified.log` | the commit (product) |
+| cleared work waiting to merge | committed slices whose commit is ahead of `origin/<branch>` (or every commit since the start when there is no upstream; with `--no-git`, every committed slice) | main |
+
+**Queues are drawn as their items, not a number.** Each queue node holds its count and an orbit of one dot per item (red P0, amber
+P1, otherwise the stage colour), slowly turning, with the item title on hover and `+N more` past the cap (22, or 10 in a fleet
+pool). Clicking a queue opens its items. The product node has a ring that fills with committed ÷ all slices. The fleet view draws
+the same queues, orbits and ring inside every pool.
+
 ## Known gaps
+
+- **No semantic zoom yet.** At scale a swarm's agents of one role are not yet merged into one node per role.
 
 - **Small fleet pools have no labels.** Their names appear on hover and in the tab. Main's lines to the lower pools show only in
   the gaps between pools.

@@ -83,7 +83,7 @@ const cut=(t,n)=>{t=String(t||'');return t.length>n?t.slice(0,Math.max(1,n-1))+'
 const wrap2=(t,n)=>{const w=String(t||'').split(/\s+/),L=[''];w.forEach(x=>{if((L[L.length-1]+' '+x).trim().length>n&&L[L.length-1])L.push(x);else L[L.length-1]=(L[L.length-1]+' '+x).trim();});if(L.length>2){L[1]=cut(L[1]+' …',n);L.length=2;}return L.filter(Boolean);};
 // a chip names the character and keeps the role beside it, so function is never hidden
 const chip=(n,lab)=>`<span class='chip ${n=='chief'?'c':n=='manager'?'mg':/^w-/.test(n)||n=='workers'?'w':/^v-/.test(n)||n=='verifiers'?'v':''}' title='${esc(n)}'>${esc(lab||n)}${lab&&lab!=n&&!['main','queue','all','workers','verifiers','chief','manager'].includes(n)?`<span style='opacity:.7;font-weight:500'> ${esc(n)}</span>`:''}</span>`;
-const roleT=a=>a.role=='chief'?'Chief':a.role=='manager'?'Manager':a.role=='worker'?'Worker '+a.name:a.role=='verifier'?'Verifier '+a.name:(a.role[0].toUpperCase()+a.role.slice(1)+' '+a.name);
+const roleT=a=>a.role=='chief'?(a.name=='chief'?'Chief':'Chief '+a.name):a.role=='manager'?'Manager':a.role=='worker'?'Worker '+a.name:a.role=='verifier'?'Verifier '+a.name:(a.role[0].toUpperCase()+a.role.slice(1)+' '+a.name);
 const cname=a=>a.char?a.char.name:roleT(a),cshort=a=>a.char?a.char.short:a.name,agentIn=(S,n)=>S.agents.find(a=>a.name==n),cs=(S,n)=>{const a=agentIn(S,n);return a?cshort(a):n;};
 const lvl=(n,per)=>!n?0:n/Math.max(per,1)<1.2?0:n/Math.max(per,1)<2.5?1:2;
 // ---------------------------------------------------------------- geometry
@@ -100,69 +100,87 @@ function spread(n,c,span,maxStep){const st=n>1?Math.min(maxStep,span/(n-1)):0;re
 // returns {pos:{key:[x,y]}, r:{key}, side:{key:'r'|'l'|'b'|'t'}, style, route?(kind,a,b), back:d, deco:[]}
 const LAY={
  loop(G){const {x,y,w,h}=G.box,top=G.main?y+196:y+(G.compact?58:96),bot=y+h-(G.compact?16:52),cy=G.compact?y+h*.58:(top+bot)/2,span=bot-top,o=G.o;
-  o.pos.main=[x+w*.5,y+40];place(G.CH,x+w*.2,G.main?y+118:y+(G.compact?22:46),w*.16,'h',o);place(G.MG.concat(G.OT),x+w*.5,G.main?y+124:y+(G.compact?26:52),w*.14,'h',o);
-  o.pos.q=[x+w*.085,cy];o.pos.hw=[x+w*.25,cy];o.pos.hv=[x+w*.585,cy];o.pos.p=[x+w*.915,cy];
+  o.pos.main=[x+w*.5,y+40];place(G.CH,x+w*(.2+.08*Math.max(G.CH.length-1,0)),G.main?y+118:y+(G.compact?22:46),w*.16,'h',o);place(G.MG.concat(G.OT),x+w*.5,G.main?y+124:y+(G.compact?26:52),w*.14,'h',o);
+  o.pos.q=[x+w*.085,cy];o.pos.hw=[x+w*.25,cy];o.pos.hv=[x+w*.585,cy];o.pos.p=[x+w*.915,cy];research(G,[x+w*.085,G.main?y+118:y+(G.compact?22:46)],o.pos.q,o);
   lens(G.W,x+w*.40,w*.045,cy,span,o,'r');lens(G.V,x+w*.73,w*.03,cy,span*.8,o,'r');
   o.mainSide='l';o.style='curve';o.route=(k,a,b)=>k=='dir'&&a=='main'?`M${f1(o.pos.main[0])},${f1(o.pos.main[1]+26)} C${f1(o.pos.main[0])},${f1(o.pos[b][1])} ${f1(o.pos[b][0]+80)},${f1(o.pos[b][1])} ${f1(o.pos[b][0]+(o.r[b]||20))},${f1(o.pos[b][1])}`:k=='p2main'?`M${f1(o.pos.p[0])},${f1(o.pos.p[1]-o.r.p)} C${f1(o.pos.p[0])},${f1(y+60)} ${f1(x+w*.72)},${f1(y+40)} ${f1(o.pos.main[0]+30)},${f1(y+40)}`:null;
   o.back=`M${f1(o.pos.p[0])},${f1(o.pos.p[1]+o.r.p)} C${f1(o.pos.p[0])},${f1(y+h-6)} ${f1(x+w*.7)},${f1(y+h-6)} ${f1(x+w*.5)},${f1(y+h-6)} C${f1(x+w*.3)},${f1(y+h-6)} ${f1(o.pos.q[0])},${f1(y+h-6)} ${f1(o.pos.q[0])},${f1(o.pos.q[1]+o.r.q)}`;},
  hub(G){const {x,y,w,h}=G.box,top=G.main?y+120:y+(G.compact?40:60),bot=y+h-(G.compact?14:30),cy=(top+bot)/2,c=[x+w*.5,cy],o=G.o,rx=w*.3,ry=(bot-top)/2-6;
-  o.pos.main=[x+w*.5,y+40];const hubAgent=G.MG[0]||G.CH[0];o.pos.hw=[c[0]-8,c[1]];o.pos.hv=[c[0]+8,c[1]];
+  o.pos.main=[x+w*.5,y+40];const hubAgent=G.MG[0]||G.CH[0];o.pos.hw=[c[0]-8,c[1]];o.pos.hv=[c[0]+rx*.42,c[1]];
   if(hubAgent)o.pos[hubAgent.name]=c;const rest=G.CH.concat(G.MG,G.OT).filter(a=>a!==hubAgent);place(rest,c[0],top,w*.12,'h',o);
-  arc(G.W,c,rx,ry,125,235,o,'l');arc(G.V,c,rx,ry,-55,55,o,'r');o.pos.q=[x+w*.08,top+14];o.pos.p=[x+w*.92,top+14];
+  arc(G.W,c,rx,ry,125,235,o,'l');arc(G.V,c,rx,ry,-55,55,o,'r');o.pos.q=[x+w*.08,G.RS.length||G.GQ?cy+(bot-top)*.22:top+14];o.pos.p=[x+w*.92,top+14];research(G,[x+w*.08,top+14],o.pos.q,o);
   o.mainSide='l';o.style='line';o.route=(k,a,b)=>k=='p2main'?R.curve(o.pos.p,o.pos.main):k=='dir'&&a=='main'?R.curve(o.pos.main,o.pos[b]):null;
   o.back=`M${f1(o.pos.p[0])},${f1(o.pos.p[1]+o.r.p)} C${f1(o.pos.p[0])},${f1(bot+10)} ${f1(o.pos.q[0])},${f1(bot+10)} ${f1(o.pos.q[0])},${f1(o.pos.q[1]+o.r.q)}`;},
  subway(G){const {x,y,w,h}=G.box,top=G.main?y+120:y+(G.compact?44:70),bot=y+h-(G.compact?16:30),cy=(top+bot)/2+(G.compact?0:10),o=G.o;
-  o.pos.main=[x+w*.955,cy];place(G.CH,x+w*.05,cy,0,'h',o);place(G.MG.concat(G.OT),x+w*.25,top-(G.compact?8:28),w*.12,'h',o);
+  o.pos.main=[x+w*.955,cy];G.CH.forEach((a,i)=>{o.pos[a.name]=[x+w*.05,cy+(i-(G.CH.length-1)/2)*(G.compact?40:110)];o.side[a.name]='b';});place(G.MG.concat(G.OT),x+w*.25,top-(G.compact?8:28),w*.12,'h',o);
   o.pos.q=[x+w*.15,cy];o.pos.hw=[x+w*.25,cy];o.pos.hv=[x+w*.56,cy];o.pos.p=[x+w*(G.main?.85:.92),cy];
-  col(G.W,x+w*.40,cy,bot-top,o,'r');col(G.V,x+w*.7,cy,(bot-top)*.85,o,'r');if(!G.CH.length)o.pos.q=[x+w*.08,cy];
+  col(G.W,x+w*.40,cy,bot-top,o,'r');col(G.V,x+w*.7,cy,(bot-top)*.85,o,'r');if(!G.CH.length)o.pos.q=[x+w*.08,cy];research(G,[o.pos.q[0],top-(G.compact?8:28)],o.pos.q,o);
   o.mainSide='b';o.style='metro';o.route=(k,a,b)=>k=='dir'&&a=='main'?`M${f1(o.pos.main[0])},${f1(cy-o.r.main)} C${f1(o.pos.main[0])},${f1(y+24)} ${f1(x+w*.05)},${f1(y+24)} ${f1(o.pos[b][0])},${f1(o.pos[b][1]-(o.r[b]||10))}`:k=='mg'?R.metro(o.pos[a],o.pos[b]):null;
   o.back=`M${f1(o.pos.p[0])},${f1(cy+o.r.p)} L${f1(o.pos.p[0])},${f1(bot+8)} L${f1(o.pos.q[0])},${f1(bot+8)} L${f1(o.pos.q[0])},${f1(cy+o.r.q)}`;},
  orbit(G){const {x,y,w,h}=G.box,top=y+(G.compact?40:24),bot=y+h-(G.compact?14:24),c=[x+w*.5,(top+bot)/2],o=G.o,rx=Math.min(w*.4,(bot-top)*.75),ry=(bot-top)/2-8;
   let inner=G.CH.concat(G.MG,G.OT);if(G.main)o.pos.main=c;else if(inner.length){o.pos[inner[0].name]=c;inner=inner.slice(1);}
-  arc(inner,c,rx*.34,ry*.34,200,340,o,'b');const ring=[{name:'q'}].concat(G.W,G.V,[{name:'p'}]),n=ring.length,a0=158,a1=382;
+  arc(inner,c,rx*.34,ry*.34,200,340,o,'b');const ring=(G.GQ?[{name:'gq'}]:[]).concat(G.RS,[{name:'q'}],G.W,G.V,[{name:'p'}]),n=ring.length,a0=158,a1=382;
   ring.forEach((it,i)=>{const t=(a0+(a1-a0)*i/Math.max(n-1,1))*Math.PI/180;o.pos[it.name]=[c[0]+rx*Math.cos(t),c[1]+ry*Math.sin(t)];o.side[it.name]=Math.sin(t)<-.6?'t':Math.cos(t)<0?'l':'r';});
   const cen=L=>L.length?[L.reduce((s,a)=>s+o.pos[a.name][0],0)/L.length,L.reduce((s,a)=>s+o.pos[a.name][1],0)/L.length]:c;
   const cw=cen(G.W),cv=cen(G.V);o.pos.hw=[c[0]+(cw[0]-c[0])*.55,c[1]+(cw[1]-c[1])*.55];o.pos.hv=[c[0]+(cv[0]-c[0])*.55,c[1]+(cv[1]-c[1])*.55];
   o.mainSide='b';o.style='chord';o.center=c;o.back=`M${f1(o.pos.p[0])},${f1(o.pos.p[1])} A${f1(rx)},${f1(ry)} 0 0 1 ${f1(o.pos.q[0])},${f1(o.pos.q[1])}`;
   o.deco.push(`<ellipse cx='${f1(c[0])}' cy='${f1(c[1])}' rx='${f1(rx)}' ry='${f1(ry)}' fill='none' style='stroke:var(--line)' stroke-width='1.2'/><ellipse cx='${f1(c[0])}' cy='${f1(c[1])}' rx='${f1(rx*.34)}' ry='${f1(ry*.34)}' fill='none' style='stroke:var(--line)' stroke-dasharray='2 5'/>`);},
  circuit(G){const {x,y,w,h}=G.box,top=G.main?y+110:y+(G.compact?44:60),bot=y+h-(G.compact?16:30),cy=(top+bot)/2,o=G.o;
-  o.pos.main=[x+w*.5,y+38];place(G.CH,x+w*.2,top+(G.compact?6:20),0,'h',o);place(G.MG.concat(G.OT),x+w*.2,bot-(G.compact?10:30),w*.08,'h',o);
-  o.pos.q=[x+w*.07,cy];o.pos.hw=[x+w*.31,cy];o.pos.hv=[x+w*.585,cy];o.pos.p=[x+w*.9,cy];
+  o.pos.main=[x+w*.5,y+38];place(G.CH,x+w*(.2+.06*Math.max(G.CH.length-1,0)),top+(G.compact?6:20),w*.12,'h',o);place(G.MG.concat(G.OT),x+w*.2,bot-(G.compact?10:30),w*.08,'h',o);
+  o.pos.q=[x+w*.07,cy];o.pos.hw=[x+w*.31,cy];o.pos.hv=[x+w*.585,cy];o.pos.p=[x+w*.9,cy];research(G,[x+w*.07,top+(G.compact?2:6)],o.pos.q,o);
   col(G.W,x+w*.43,cy,bot-top,o,'r');col(G.V,x+w*.72,cy,(bot-top)*.85,o,'r');
   o.mainSide='l';o.style='ortho';o.route=(k,a,b)=>k=='dir'&&a=='main'?R.orthoV(o.pos.main,o.pos[b]):k=='p2main'?R.orthoV(o.pos.p,o.pos.main):k=='mg'?R.orthoV(o.pos[a],o.pos[b]):null;
   o.back=`M${f1(o.pos.p[0])},${f1(cy+o.r.p)} L${f1(o.pos.p[0])},${f1(bot+8)} L${f1(o.pos.q[0])},${f1(bot+8)} L${f1(o.pos.q[0])},${f1(cy+o.r.q)}`;}};
 function mirrorPath(d,c2){return d.replace(/([MLCQ])([^A-Z]*)/g,(m,cmd,a)=>{const v=a.trim().split(/[\s,]+/).filter(Boolean).map(Number),out=[];for(let i=0;i<v.length;i+=2)out.push(f1(c2-v[i])+','+f1(v[i+1]));return cmd+out.join(' ')+' ';});}
+// the goals queue sits at g, the researchers stand on the way from it down to the build queue q (labels to the right)
+function research(G,g,q,o){if(G.GQ)o.pos.gq=g;const n=G.RS.length,a=G.GQ?g:[g[0],g[1]-(q[1]-g[1])*.15];G.RS.forEach((r,i)=>{const t=(i+1)/(n+1);o.pos[r.name]=[a[0]+(q[0]-a[0])*t+(n>2&&i%2?o.r[r.name]*1.6:0),a[1]+(q[1]-a[1])*t];o.side[r.name]='r';});}
 function place(L,cx,cy,step,dir,o){spread(L.length,cx,step*(L.length-1),step).forEach((v,i)=>{o.pos[L[i].name]=[v,cy];o.side[L[i].name]='b';});}
 function col(L,cx,cy,span,o,side){const ys=spread(L.length,cy,span,o.step);L.forEach((a,i)=>{o.pos[a.name]=[cx,ys[i]];o.side[a.name]=side;});}
 function lens(L,cx,bulge,cy,span,o,side){const ys=spread(L.length,cy,span,o.step),hs=Math.max(...ys.map(v=>Math.abs(v-cy)),1);L.forEach((a,i)=>{const t=(ys[i]-cy)/hs;o.pos[a.name]=[cx+bulge*(1-t*t),ys[i]];o.side[a.name]=side;});}
 function arc(L,c,rx,ry,d0,d1,o,side){const n=L.length;L.forEach((a,i)=>{const t=(n==1?(d0+d1)/2:d0+(d1-d0)*i/(n-1))*Math.PI/180;o.pos[a.name]=[c[0]+rx*Math.cos(t),c[1]+ry*Math.sin(t)];o.side[a.name]=side;});}
 function layoutHeight(S,compact){const n=Math.max(S.workers,S.agents.filter(a=>a.role=='verifier').length,1);if(compact)return 0;
  return {loop:clamp(300+n*46,600,1150),hub:clamp(300+n*44,600,1100),subway:clamp(220+n*46,520,1100),orbit:clamp(420+n*30,620,1000),circuit:clamp(240+n*48,540,1100)}[P.layout];}
+// ---- a queue's items orbit its node: one dot per item, coloured by priority (or stage), its title on hover, '+N more' past the cap
+const STC={goal:'var(--accent)',ready:'var(--q)',built:'var(--slow)',checking:'var(--msg)',holds:'var(--l0)',committed:'var(--ok)'};
+function orbitQ(c,r,Q,compact,si){const items=(Q&&Q.items)||[],n=(Q&&Q.n!=null)?Q.n:items.length,cap=compact?10:22,m=Math.min(items.length,cap),rr=r+(compact?5:10),dr=compact?2.2:3.6;if(!n)return '';
+ const col=x=>x.p===0?'var(--bad)':x.p===1&&x.st!='committed'?'var(--slow)':STC[x.st]||'var(--q)';let s='';
+ for(let i=0;i<m;i++){const t=2*Math.PI*i/Math.max(m,1),x=items[i];s+=`<circle cx='${f1(rr*Math.cos(t))}' cy='${f1(rr*Math.sin(t))}' r='${dr}' style='fill:${col(x)};stroke:var(--card)' stroke-width='.8'><title>${esc((x.p!=null?'P'+x.p+' ':'')+(x.title||x.tag||x.id))}</title></circle>`;}
+ const dur=40+(si*7)%23,more=n-m;
+ return `<g transform='translate(${f1(c[0])},${f1(c[1])})'><circle r='${f1(rr)}' fill='none' style='stroke:var(--line)' stroke-dasharray='1.5 3'/><g><animateTransform attributeName='transform' type='rotate' from='0' to='360' dur='${dur}s' repeatCount='indefinite'/>${s}</g>${more>0?`<text x='${f1(rr*.72)}' y='${f1(-rr*.72-2)}' class='sub hl' style='font-size:${compact?8:10.5}px;font-weight:700'>+${more} more</text>`:''}</g>`;}
 // ---------------------------------------------------------------- one swarm's part of the graph
 function swarmGraph(S,si,box,compact,withMain,mirror){
- const A=S.agents,W=A.filter(a=>a.role=='worker'),V=A.filter(a=>a.role=='verifier'),CH=A.filter(a=>a.role=='chief'),MG=A.filter(a=>a.role=='manager'),OT=A.filter(a=>!['worker','verifier','chief','manager'].includes(a.role));
+ const A=S.agents,W=A.filter(a=>a.role=='worker'),V=A.filter(a=>a.role=='verifier'),CH=A.filter(a=>a.role=='chief'),MG=A.filter(a=>a.role=='manager'),RS=A.filter(a=>a.role=='researcher'),OT=A.filter(a=>!['worker','verifier','chief','manager','researcher'].includes(a.role));
+ const SQ=S.stageq||{},GQ=!!(SQ.goals&&SQ.goals.show);
  const nmax=Math.max(W.length,V.length,1),avail=box.h-(withMain?190:compact?80:130);
  const o={pos:{},r:{},side:{},deco:[],step:Math.min(compact?34:58,avail/Math.max(nmax-1,1))};
  const Rbig=compact?clamp(Math.min(box.w,box.h)*.045,9,15):28,Rs=clamp(o.step*.36,compact?5:9,compact?12:20);
- A.forEach(a=>o.r[a.name]=(a.role=='worker'||a.role=='verifier')?Rs:(a.role=='chief'||a.role=='manager')?Rbig:Rbig*.8);
- o.r.q=o.r.p=compact?clamp(Rbig*1.6,15,26):clamp(30+Math.sqrt(S.q.nready)*2.5,36,50);o.r.main=compact?0:26;o.r.hw=o.r.hv=4;
- LAY[P.layout]({box,W,V,CH,MG,OT,compact,main:withMain,o});
- if(mirror&&P.layout=='loop'){const c2=2*box.x+box.w;Object.values(o.pos).forEach(v=>v[0]=c2-v[0]);Object.keys(o.side).forEach(k=>o.side[k]=o.side[k]=='r'?'l':o.side[k]=='l'?'r':o.side[k]);if(o.back)o.back=mirrorPath(o.back,c2);}
+ A.forEach(a=>o.r[a.name]=(a.role=='worker'||a.role=='verifier'||a.role=='researcher')?Rs:(a.role=='chief'||a.role=='manager')?Rbig:Rbig*.8);
+ o.r.q=o.r.p=compact?clamp(Rbig*1.6,15,26):clamp(30+Math.sqrt(S.q.nready)*2.5,36,50);o.r.main=compact?0:26;o.r.hw=4;o.r.hv=o.r.gq=o.r.cq=o.r.mq=compact?7:15;
+ LAY[P.layout]({box,W,V,CH,MG,OT,RS,GQ,compact,main:withMain,o});
+ // the two queues around the product: reviewed work waiting to be cleared comes in below it, cleared work waiting to merge leaves above it
+ {const [px,py]=o.pos.p,gap=o.r.p+o.r.cq+(compact?10:30);if(P.layout=='orbit'){const c=o.center,dx=px-c[0],dy=py-c[1],L=Math.hypot(dx,dy)||1;o.pos.cq=[px+dx/L*gap*.75,py+gap*.8];o.side.cq='r';o.pos.mq=[px-dx/L*gap,py-dy/L*gap];o.side.mq='l';}
+  else{o.pos.cq=[px,py+gap];o.side.cq='l';o.pos.mq=P.layout=='hub'?[px-gap,py]:[px,py-gap];o.side.mq='l';}
+  if(o.back&&P.layout!='orbit')o.back=o.back.replace(/^M[^A-Za-z]*/,`M${f1(o.pos.cq[0])},${f1(o.pos.cq[1]+o.r.cq)} `);}
+ if(mirror&&P.layout=='loop'){const c2=2*box.x+box.w;Object.keys(o.pos).forEach(k=>o.pos[k]=[c2-o.pos[k][0],o.pos[k][1]]);Object.keys(o.side).forEach(k=>o.side[k]=o.side[k]=='r'?'l':o.side[k]=='l'?'r':o.side[k]);if(o.back)o.back=mirrorPath(o.back,c2);}
  const K=k=>k=='main'?'main':si+'|'+k,g=[],edges=[],nodes=[];
  Object.entries(o.pos).forEach(([k,v])=>{if(k=='main'&&!withMain)return;POS[K(k)]=v;});
  const ready=S.q.nready,st=S.stages,nw=Math.max(S.workers,1),nv=Math.max(V.length,1);
  const route=(kind,a,b)=>(o.route&&o.route(kind,a,b))||(o.style=='chord'?R.chord(o.pos[a],o.pos[b],o.center):R[o.style](o.pos[a],o.pos[b]));
  const E=(kind,a,b,load,active,cls)=>{if(!o.pos[a]||!o.pos[b])return;const d=route(kind,a,b);edges.push({k:K(a)+'>'+K(b),a:K(a),b:K(b),d,kind,load,active,cls});};
- const chief=CH[0],mg=MG[0];
- if(withMain)E('dir','main',chief?chief.name:'q',-1,false);
- if(chief){E('dir',chief.name,'q',-1,false);MG.concat(OT).forEach(m=>E('mg',chief.name,m.name,-2,false));}
+ const chief=CH[0],mg=MG[0],first=GQ?'gq':RS.length?null:'q';
+ // every chief is drawn and wired: main above all of them, each chief stocks the goals (or the build queue) and directs the rest
+ if(withMain)(CH.length?CH:[{name:first||'q'}]).forEach(c=>E('dir','main',c.name,-1,false));
+ CH.forEach((c,ci)=>{if(first)E('dir',c.name,first,-1,false);else RS.forEach(r=>E('dir',c.name,r.name,-1,false));if(ci==0)MG.concat(OT).forEach(m=>E('mg',c.name,m.name,-2,false));});
+ if(GQ&&!RS.length)E('work','gq','q',lvl(SQ.goals.n,2),false);
+ RS.forEach(r=>{if(GQ)E('work','gq',r.name,lvl(SQ.goals.n,RS.length),r.state!='idle');E('work',r.name,'q',0,r.state=='live');});
  if(mg)E('mg',mg.name,'hw',-2,false);
  E('work','q','hw',lvl(ready,nw),S.q.nprog>0);
  W.forEach(a=>E('work','hw',a.name,a.slice?(a.state=='idle'?2:a.state=='slow'?1:0):0,!!a.slice&&a.state!='idle'));
  W.forEach(a=>E('work',a.name,'hv',lvl(st.awaiting,nv),st.awaiting>0));
  V.forEach(a=>E('work','hv',a.name,a.check?0:0,!!a.check));
- V.forEach(a=>E('work',a.name,'p',lvl(st.holds,1),!!(S.verd[0]&&S.verd[0].by==a.name)));
- if(withMain)E('p2main','p','main',lvl(S.git.unpushed,3),S.git.unpushed>0);
+ V.forEach(a=>E('work',a.name,'cq',lvl(st.holds,1),!!(S.verd[0]&&S.verd[0].by==a.name)));
+ E('work','cq','p',lvl(st.holds,1),st.holds>0);E('work','p','mq',0,false);
+ if(withMain)E('p2m','mq','main',lvl(S.git.unpushed,3),S.git.unpushed>0);
  // draw: casing, colour, flow overlay
  const sk=SKINS[P.skin],W0=compact?3:5.5;
  edges.forEach(e=>{const col=e.load==-1?'var(--ink)':e.load==-2?'var(--mute)':['var(--l0)','var(--l1)','var(--l2)'][e.load],wd=e.load==-2?1.4:e.load==-1?(compact?1.6:2.4):W0;
@@ -199,7 +217,7 @@ function swarmGraph(S,si,box,compact,withMain,mirror){
  const WORD={live:'working now',slow:'quiet a few minutes',idle:'idle, a message wakes it'};
  if(withMain){const [mx,my]=o.pos.main;g.push(`<g class='node${SEL=='main'?' sel':''}' data-k='main'><circle class='sh' cx='${mx}' cy='${my}' r='26' style='fill:var(--ink);stroke:var(--ink)' stroke-width='2'/><text x='${mx}' y='${my+4}' text-anchor='middle' style='fill:var(--card);font-size:11px;font-weight:700'>main</text>${o.mainSide=='b'?`<text x='${mx}' y='${my+42}' text-anchor='middle' class='nm hl'>Main session</text><text x='${mx}' y='${my+55}' text-anchor='middle' class='sub hl'>${esc(cut(S.goal.text||'',26))}</text>`:`<text x='${mx-34}' y='${my-4}' text-anchor='end' class='nm hl'>Main session</text><text x='${mx-34}' y='${my+11}' text-anchor='end' class='sub hl'>${esc(cut('goal: '+(S.goal.text||'not written'),46))}</text>`}</g>`);
   NODEINFO.main={title:'Main session',kind:'main',S};}
- A.forEach(a=>{const small=a.role=='worker'||a.role=='verifier',r=o.r[a.name],tag=a.tag||(a.state=='idle'?'idle':a.state=='slow'?'quiet':'working');
+ A.forEach(a=>{const small=a.role=='worker'||a.role=='verifier'||a.role=='researcher',r=o.r[a.name],tag=a.tag||(a.state=='idle'?'idle':a.state=='slow'?'quiet':'working');
   const lab=small?{inside:a.name,name:compact?'':cut(cshort(a),20),badge:a.name}:{inside:compact?'':(a.role=='chief'?'C':a.role=='manager'?'M':a.name.slice(0,2)),name:compact?'':cut(cname(a),22),badge:a.name};
   const sub=compact?[]:small?[cut(tag,o.side[a.name]=='b'?18:28)]:a.char?[roleT(a),cut(tag,24)]:[cut(tag,24)];
   g.push(node(a.name,'',r,a.state,lab,sub,{title:cname(a)+' · '+roleT(a)+(a.char&&a.char.aside?' · '+a.char.aside:''),kind:'agent',a,S,state:WORD[a.state]}));});
@@ -207,12 +225,16 @@ function swarmGraph(S,si,box,compact,withMain,mirror){
  const dots=(n,r,colf)=>{let s='';const m=Math.min(n,64),rr=r*.78,dr=clamp(rr/Math.sqrt(m||1)*.52,1.6,5);for(let i=0;i<m;i++){const t=i*2.39996,q=rr*Math.sqrt((i+.5)/m);s+=`<circle cx='${f1(Math.cos(t)*q)}' cy='${f1(Math.sin(t)*q)}' r='${f1(dr)}' style='fill:${colf(i)}'/>`;}return s;};
  const qcol=S.warn.level=='bad'?'var(--bad)':S.warn.level=='warn'?'var(--warn)':'var(--ink)';
  const pr=S.q.ready.map(x=>x.p);
- const qx=`<g transform='translate(${f1(o.pos.q[0])},${f1(o.pos.q[1])})'>${dots(ready,o.r.q,i=>pr[i]===0?'var(--bad)':pr[i]===1?'var(--slow)':'var(--q)')}</g>`;
- const cm=st.committed,ph=st.holds;const px=`<g transform='translate(${f1(o.pos.p[0])},${f1(o.pos.p[1])})'>${dots(cm+ph,o.r.p,i=>i<cm?'var(--ok)':'var(--slow)')}</g>`;
+ const qx=orbitQ(o.pos.q,o.r.q,SQ.build||{n:ready,items:S.q.ready},compact,si);
+ const cm=st.committed,ph=st.holds,dn=S.done||{n:cm,total:S.q.total,pct:0},C2=2*Math.PI*(o.r.p+(compact?3:6));
+ const px=`<g transform='translate(${f1(o.pos.p[0])},${f1(o.pos.p[1])})'>${dots(cm+ph,o.r.p*.8,i=>i<cm?'var(--ok)':'var(--slow)')}<circle r='${f1(o.r.p+(compact?3:6))}' fill='none' style='stroke:var(--line)' stroke-width='${compact?3:6}'/><circle r='${f1(o.r.p+(compact?3:6))}' fill='none' style='stroke:var(--ok)' stroke-width='${compact?3:6}' stroke-linecap='round' stroke-dasharray='${f1(C2*dn.pct/100)} ${f1(C2)}' transform='rotate(-90)'><title>${dn.n} of ${dn.total} slices done (${dn.pct}%)</title></circle></g>`;
  o.side.q=o.side.q=='l'||o.side.q=='t'?o.side.q:'b';o.side.p=o.side.p=='r'||o.side.p=='t'?o.side.p:'b';
- g.push(node('q','',o.r.q,'q',{name:compact?'':'Queue '+ready,badge:''},compact?[]:[`${S.q.nprog} in work · ${S.q.nbuilt} built`,S.warn.level=='ok'?`runway ${S.runway} rounds`:S.warn.text.split(':')[0]],{title:'The queue',kind:'queue',S,state:S.warn.text},qx).replace("class='sh'",`class='sh' stroke-opacity='1'`).replace(/style='fill:var\(--card\);stroke:var\(--ink\)'/,`style='fill:var(--card);stroke:${qcol}'`));
- g.push(node('p','',o.r.p,'p',{name:compact?'':'Product '+cm,badge:''},compact?[]:[`${S.git.n} commits · ${S.git.unpushed} to approve`],{title:'The product',kind:'product',S,state:`${cm} slices committed after a verifier passed them`},px));
- ['hw','hv'].forEach(k=>g.push(`<circle cx='${f1(o.pos[k][0])}' cy='${f1(o.pos[k][1])}' r='${compact?3:5}' style='fill:var(--ink)'><title>${k=='hw'?'all workers':'all verifiers'}</title></circle>`));
+ g.push(node('q','',o.r.q,'q',{inside:String(ready),name:compact?'':`Tasks waiting to be built`,badge:''},compact?[]:[`${S.q.nprog} in work · ${S.q.nbuilt} built`,S.warn.level=='ok'?`runway ${S.runway} rounds`:S.warn.text.split(':')[0]],{title:'The queue',kind:'queue',S,state:S.warn.text},qx).replace("class='sh'",`class='sh' stroke-opacity='1'`).replace(/style='fill:var\(--card\);stroke:var\(--ink\)'/,`style='fill:var(--card);stroke:${qcol}'`));
+ const QK={gq:'goals',hv:'review',cq:'clear',mq:'merge'};Object.entries(QK).forEach(([k,qk])=>{const Q=SQ[qk];if(!Q||!Q.show||!o.pos[k])return;
+  const lab=compact?[]:wrap2(Q.label,24);o.side[k]=o.side[k]||'b';
+  g.push(node(k,'',o.r[k],'q',{inside:String(Q.n),name:lab[0]||'',badge:''},lab.slice(1),{title:Q.label[0].toUpperCase()+Q.label.slice(1)+': '+Q.n,kind:'stageq',qk,S,state:''},orbitQ(o.pos[k],o.r[k],Q,compact,si)));});
+ g.push(node('p','',o.r.p,'p',{name:compact?'':'Product '+dn.pct+'%',badge:''},compact?[]:[`${dn.n} of ${dn.total} done · ${S.git.unpushed} to approve`],{title:'The product',kind:'product',S,state:`${cm} slices committed after a verifier passed them`},px));
+ ['hw'].concat(SQ.review?[]:['hv']).forEach(k=>g.push(`<circle cx='${f1(o.pos[k][0])}' cy='${f1(o.pos[k][1])}' r='${compact?3:5}' style='fill:var(--ink)'><title>${k=='hw'?'all workers':'all verifiers'}</title></circle>`));
  // messages between agents in the last half hour, as dotted chords (drawn under the nodes)
  const pair={};S.msgs.filter(m=>now-m.t<1800&&!m.auto&&m.to!='all').forEach(m=>{const a=K(m.from),b=K(m.to);if(POS[a]&&POS[b]&&a!=b){const k=[a,b].sort().join('~');pair[k]=(pair[k]||0)+1;}});
  const mlines=Object.entries(pair).map(([k,c])=>{const [a,b]=k.split('~');return `<path d='${R.chord(POS[a],POS[b],o.center||[box.x+box.w/2,box.y+box.h/2])}' fill='none' style='stroke:var(--msg)' stroke-opacity='${f1(Math.min(.25+c*.08,.8))}' stroke-width='${f1(Math.min(1+c*.25,2.6))}' stroke-dasharray='1.5 5' stroke-linecap='round'><title>messages ${esc(a.split('|').pop())} ↔ ${esc(b.split('|').pop())}: ${c} in the last 30 minutes</title></path>`;}).join('');
@@ -237,12 +259,12 @@ function packFleet(L,W){const n=L.length,rows=n<=3?1:Math.ceil(n/4),per=Math.cei
   r.items.forEach((t,j)=>{const ww=(W-32-(r.items.length-1)*14)*Math.pow(t.w,.75)/tot;boxes[t.i]={x,y,w:ww,h:hh,mirror:j%2==1};x+=ww+14;});y+=hh+16;});return {boxes,H:y};}
 function graphFleet(){POS={};EDGES={};NODEINFO={};const W=1300,{boxes,H}=packFleet(D.swarms,W),parts=[],tops=[];const M=[W/2,46];POS.main=M;
  D.swarms.forEach((S,i)=>{const b=boxes[i],col=pal(i),inner={x:b.x+8,y:b.y+38,w:b.w-16,h:b.h-44},sg=swarmGraph(S,i,inner,true,false,b.mirror);
-  const ch=S.agents.find(a=>a.role=='chief'),tgt=POS[sg.K(ch?ch.name:'q')];tops.push({tgt:[b.x+b.w/2,b.y],S,i,p:POS[sg.K('p')]});
+  const chs=S.agents.filter(a=>a.role=='chief');(chs.length?chs:[null]).forEach(ch=>tops.push({tgt:ch?POS[sg.K(ch.name)]:[b.x+b.w/2,b.y],S,i,p:POS[sg.K('p')]}));
   const wl=S.warn.level,wcol=wl=='bad'?'var(--bad)':wl=='warn'?'var(--warn)':wl=='done'?'var(--done)':'var(--ok)';
   parts.push(`<g class='pool' data-s='${esc(S.name)}'><rect x='${f1(b.x)}' y='${f1(b.y)}' width='${f1(b.w)}' height='${f1(b.h)}' rx='14' style='fill:var(--card)' opacity='.93'/>${poolDeco(b,col,i)}<rect x='${f1(b.x)}' y='${f1(b.y)}' width='${f1(b.w)}' height='${f1(b.h)}' rx='14' fill='none' style='stroke:${col}' stroke-opacity='.55' stroke-width='1.5'/>
    <text x='${f1(b.x+12)}' y='${f1(b.y+20)}' class='big' style='font-size:17px;fill:${col}'>${esc(S.name)}<tspan class='sub' style='font-style:normal;font-family:var(--bfont);font-weight:400;letter-spacing:0;text-transform:none'>  ${esc(cut(S.goal.text,Math.max(0,Math.floor((b.w-24)/6.4)-S.name.length*1.6)))}</tspan><title>${esc(S.goal.text)}</title></text><text x='${f1(b.x+12)}' y='${f1(b.y+35)}' style='font-size:11px;font-weight:700;fill:${wcol}'>${esc(cut(wl=='ok'?S.live+' of '+S.agents.length+' working · '+S.q.nready+' ready'+(S.git.unpushed?' · '+S.git.unpushed+' to approve':''):S.warn.text+' · '+S.q.nready+' ready',Math.floor((b.w-20)/6.2)))}</text>
    ${sg.deco}${sg.under}${sg.body}</g>`);});
- const lines=tops.map(t=>{const d=R.curve(M,t.tgt);EDGES['main>'+t.i]={d};return `<path class='ed' d='${d}' style='stroke:${pal(t.i)}' stroke-width='2' stroke-opacity='.7'><title>main → ${esc(t.S.name)}</title></path>`;}).join('');
+ const lines=tops.map((t,j)=>{const d=R.curve(M,t.tgt);EDGES['main>'+t.i+'.'+j]={d};return `<path class='ed' d='${d}' style='stroke:${pal(t.i)}' stroke-width='2' stroke-opacity='.7'><title>main → ${esc(t.S.name)}</title></path>`;}).join('');
  const tot=D.swarms.reduce((s,x)=>s+x.agents.length,0),lv=D.swarms.reduce((s,x)=>s+x.live,0);
  const main=`<g class='node${SEL=='main'?' sel':''}' data-k='main'><circle class='sh' cx='${M[0]}' cy='${M[1]}' r='26' style='fill:var(--ink);stroke:var(--ink)' stroke-width='2'/><text x='${M[0]}' y='${M[1]+4}' text-anchor='middle' style='fill:var(--card);font-size:11px;font-weight:700'>main</text><text x='${M[0]+34}' y='${M[1]-3}' class='nm hl'>Main session</text><text x='${M[0]+34}' y='${M[1]+12}' class='sub hl'>${D.swarms.length} swarms · ${lv} of ${tot} agents working</text></g>`;
  NODEINFO.main={title:'Main session',kind:'main',fleet:true};
@@ -269,7 +291,7 @@ function header(title,lede,kp){const C=2*Math.PI*22,u=D.usage||{},ring=(p,l)=>p=
  return `<header><div><h1>${title}<span id='live' title='${D.live?'live':'static page'}'></span></h1><div class='lede'>${lede}</div></div><div class='kpis'>${kp}${ring(u.five,'5-hour')}${ring(u.seven,'week')}</div></header>`;}
 function controls(){const seg=(k,M)=>`<span class='seg'>${Object.entries(M).map(([v,l])=>`<button class='${P[k]==v?'on':''}' data-p='${k}' data-v='${v}'>${typeof l=='string'?l:l.label}</button>`).join('')}</span>`;
  return `<div class='bar'>${D.mode=='fleet'&&VIEW!='fleet'?`<button class='back' data-view='fleet'>← all swarms</button>`:''}skin ${seg('skin',SKINS)} layout ${seg('layout',LAYOUTS)} node tab ${seg('tab',TABS)}<span style='margin-left:auto'>drawn ${hmOf(D.made)}${D.as_of_note?' · '+esc(D.as_of_note):''}${D.refresh?' · redrawn every '+D.refresh+' s':''}${D.live?' · live':''}</span></div>`;}
-const legend=()=>`<div class='legend'><span><i style='background:var(--l0)'></i>work line, little waiting</span><span><i style='background:var(--l1)'></i>some waiting</span><span><i style='background:var(--l2)'></i>a lot waiting</span><span><i style='background:var(--msg);height:2px'></i>dotted: messages, last 30 min</span><span><i style='background:var(--bad)'></i>dashed red: back to the queue</span><span>filled node: <b style='color:var(--live)'>working</b> · <b style='color:var(--slow)'>quiet</b> · dashed: idle</span><span>small white squares: slices riding out to the worker holding them · dots in the queue: ready slices (red P0, amber P1)</span></div>`;
+const legend=()=>`<div class='legend'><span><i style='background:var(--l0)'></i>work line, little waiting</span><span><i style='background:var(--l1)'></i>some waiting</span><span><i style='background:var(--l2)'></i>a lot waiting</span><span><i style='background:var(--msg);height:2px'></i>dotted: messages, last 30 min</span><span><i style='background:var(--bad)'></i>dashed red: back to the queue</span><span>filled node: <b style='color:var(--live)'>working</b> · <b style='color:var(--slow)'>quiet</b> · dashed: idle</span><span>small white squares: slices riding out to the worker holding them · dots orbiting a queue: its items, hover for the title (red P0, amber P1) · ring round the product: share of all slices done</span></div>`;
 function kpi(n,l,cls){return `<div class='k ${cls||''}'><b>${n}</b><span>${l}</span></div>`;}
 function viewSwarm(S){const quiet=S.agents.filter(a=>a.state=='slow').length,idle=S.agents.length-S.live-quiet;
  const lede=`<b>${esc(S.goal.text||'No goal written yet')}</b>${S.goal.total?` · ${S.goal.done} of ${S.goal.total} ${S.goal.derived?'slices passed a check':'done by the scoreboard'}`:''}<br><small>${S.live} working · ${quiet} quiet · ${idle} idle · started ${esc(S.started)} · ${esc(S.warn.text)}</small>`;
@@ -304,6 +326,7 @@ function tabHtml(k){const I=NODEINFO[k];if(!I)return '';const S=I.S,sec=(t,b)=>`
    sec('Doing now',`<div class='now'>${esc(a.tag)}</div>${a.slice?`<small title='${esc(a.slice.id)}'>holds ‘${esc(a.slice.title)}’</small>`:a.check?`<small title='${esc(a.check.id)}'>checking ‘${esc(a.check.tag)}’, built by ${esc(cs(S,a.check.w))} (${esc(a.check.w)})</small>`:''}`)+(sl?sec('Slice life',sliceLife(S,sl.id)):''),
    sec('Recent actions (newest last)',a.acts.map(x=>`<div class='step'>${esc(x)}</div>`).join('')||'<small>none read</small>')+sec('Messages to and from',ml(msgs))];}
  if(I.kind=='queue')return [`<small class='mu'>${esc(S.name)}</small><h2 style='font-size:24px;margin:4px 0'>The queue</h2>${wpill(S)} <small>${esc(S.warn.text)}</small>${qbar(S)}`,sec('In work',S.q.prog.map(p=>`<div class='step' title='${esc(p.id)}'>${chip(p.who,cs(S,p.who))}${esc(p.title)}</div>`).join('')||'<small>none</small>'),sec('Next up',S.q.ready.slice(0,12).map(p=>`<div class='step'><span class='pill'>P${p.p}</span> ${esc(p.title)}${p.from?' <small>from '+esc(p.from)+'</small>':''}</div>`).join('')||'<small>empty</small>')];
+ if(I.kind=='stageq'){const Q=S.stageq[I.qk];return [`<small class='mu'>${esc(S.name)}</small><h2 style='font-size:24px;margin:4px 0'>${esc(Q.label[0].toUpperCase()+Q.label.slice(1))}</h2><small>${Q.n} item${Q.n==1?'':'s'}</small>`,sec('Items',Q.items.slice(0,30).map(x=>`<div class='step' title='${esc(x.id)}'>${x.p!=null?`<span class='pill'>P${x.p}</span> `:''}${esc(x.title)}</div>`).join('')||'<small>none</small>')];}
  if(I.kind=='product')return [`<small class='mu'>${esc(S.name)}</small><h2 style='font-size:24px;margin:4px 0'>The product</h2><small>${S.stages.committed} slices committed after a check · ${S.git.n} commits since start · ${S.git.unpushed} wait for main to approve</small>`,sec('Commits',S.git.commits.slice(0,10).map(c=>`<div class='step'><span class='pill ${c.wait?'warn':'ok'}'>${c.wait?'to approve':'pushed'}</span> <span class='hm' title='${esc(c.h)}'>${c.hm}</span>${esc(c.s)}</div>`).join('')||'<small>none</small>'),sec('Latest checks',S.verd.slice(0,10).map(v=>`<div class='step' title='${esc(v.id)}'><span class='hm'>${v.hm}</span>${chip(v.by,cs(S,v.by))}<b>${v.v}</b> ‘${esc(v.title||v.tag)}’</div>`).join('')||'<small>none</small>')];
  if(I.kind=='main'){const L=I.fleet?D.swarms:[S];const ms=L.flatMap(s=>s.msgs.filter(m=>m.from=='main'||m.to=='main').map(m=>({...m,sn:s.name}))).sort((a,b)=>b.t-a.t).slice(0,12);
   return [`<h2 style='font-size:24px;margin:4px 0'>Main session</h2><small>sets the goal, approves and pushes; only main pushes</small>`,sec('Waiting for approval',L.map(s=>`<div class='step'><b>${esc(s.name)}</b> ${s.git.unpushed} commits</div>`).join('')),sec('Messages to and from main',ml(ms))];}
@@ -318,7 +341,7 @@ function fly(d,col,delay,r){const f=$('fly'),svg=$('graph');if(!f||!d)return;con
  c.innerHTML=`<animateMotion dur='1.5s' begin='${t.toFixed(2)}s' fill='freeze' path='${d}' keyPoints='0;1' keyTimes='0;1' calcMode='spline' keySplines='.4 0 .2 1'/><animate attributeName='opacity' values='0;1;1;0' keyTimes='0;.1;.85;1' dur='1.5s' begin='${t.toFixed(2)}s' fill='freeze'/>`;f.appendChild(c);setTimeout(()=>c.remove(),(delay+2)*1000);}
 function pulseFor(m,si,S,delay){const K=k=>k=='main'?'main':si+'|'+k,ed=(a,b)=>(EDGES[K(a)+'>'+K(b)]||{}).d,k=m.kind;let path=[];
  if(m.auto){if(k=='took')path=[ed('q','hw'),ed('hw',m.from)];else if(k=='built'&&m.to!='manager')path=[ed(m.from,'hv')];else if(k=='checking')path=[ed('hv',m.from)];
-  else if(k=='pass'&&m.to!='chief')path=[ed(m.from,'p')];else if(k=='back'&&m.to!='chief')path=[EDGES[K('p')+'>'+K('q')]&&EDGES[K('p')+'>'+K('q')].d];else if(k=='committed')path=[ed('p','main')];else if(k=='new'){const ch=S.agents.find(a=>a.role=='chief');path=[ch&&ed(ch.name,'q')];}
+  else if(k=='pass'&&m.to!='chief')path=[ed(m.from,'cq')];else if(k=='back'&&m.to!='chief')path=[EDGES[K('p')+'>'+K('q')]&&EDGES[K('p')+'>'+K('q')].d];else if(k=='committed')path=[ed('cq','p'),ed('p','mq'),ed('mq','main')];else if(k=='new'){const ch=S.agents.find(a=>a.role=='chief');path=[ch&&(ed(ch.name,'q')||ed(ch.name,'gq'))];}
   if(!path.filter(Boolean).length)return 0;}
  path=path.filter(Boolean);if(path.length){path.forEach((d,i)=>fly(d,'bead',delay+i*.9,6));return 1;}
  const a=POS[K(m.from)],b=POS[K(m.to)];if(a&&b&&a!==b){fly(R.chord(a,b,null),'var(--msg)',delay,4.5);return 1;}return 0;}
